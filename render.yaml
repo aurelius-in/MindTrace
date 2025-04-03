@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mindtrace-app
+    env: python
+    plan: free
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: VECTOR_DB_PATH
+        value: ./data/vectors.faiss  # optional if using FAISS
