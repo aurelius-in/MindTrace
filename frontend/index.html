@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MindTrace | AI-Powered Journaling</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 2rem;
+            background: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            min-height: 160px;
+            font-size: 1rem;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+        }
+        button {
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            background-color: #4e73df;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3c5fc1;
+        }
+        .response {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>MindTrace</h1>
+    <p>Journal your thoughts below. Our AI assistant will help reflect, reframe, and support your mental clarity.</p>
+
+    <form id="journalForm">
+        <textarea name="entry" id="entry" placeholder="Write your thoughts here..." required></textarea>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="responseContainer" class="response" style="display: none;"></div>
+
+    <script>
+        const form = document.getElementById('journalForm');
+        const responseContainer = document.getElementById('responseContainer');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('entry').value;
+
+            const res = await fetch('/api/cbt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+
+            const data = await res.json();
+            responseContainer.style.display = 'block';
+            responseContainer.innerHTML = `<strong>Reflection:</strong><br><pre>${data.reflection}</pre>`;
+        });
+    </script>
+</body>
+</html>
