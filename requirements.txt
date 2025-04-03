@@ -1,0 +1,27 @@
+# Core LLM + orchestration
+openai>=1.2.0
+langchain>=0.1.0
+tiktoken>=0.5.1
+
+# API and backend
+fastapi>=0.103.0
+uvicorn[standard]>=0.23.0
+pydantic>=2.0
+
+# Vector DB support
+faiss-cpu>=1.7.4  # or chromadb>=0.4.14 as an alternative
+
+# Optional frontend UI (choose one)
+streamlit>=1.27.0   # For LLM-based app interface
+# or use HTMX via templates, in which case Streamlit is not needed
+
+# Utilities
+python-dotenv>=1.0.0
+httpx>=0.24.0
+jinja2>=3.1.2      # Required if using HTMX + templates
+orjson>=3.9.5      # Faster JSON serialization
+aiofiles>=23.1.0   # Async file handling for FastAPI
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.20.0
