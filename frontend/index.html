@@ -2,77 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MindTrace | AI-Powered Journaling</title>
+    <title>Enterprise Wellness AI | Employee Wellness Platform</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Enterprise Employee Wellness AI - A comprehensive platform for employee wellness, organizational health monitoring, and workforce resilience.">
+    
+    <!-- Material-UI Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
     <style>
+        /* Loading styles */
         body {
-            font-family: system-ui, sans-serif;
-            margin: 2rem;
-            background: #f9f9f9;
-            color: #333;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
         }
-        h1 {
-            text-align: center;
-        }
-        textarea {
-            width: 100%;
-            min-height: 160px;
-            font-size: 1rem;
-            padding: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            resize: vertical;
-        }
-        button {
-            margin-top: 1rem;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            background-color: #4e73df;
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
             color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
         }
-        button:hover {
-            background-color: #3c5fc1;
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
         }
-        .response {
-            margin-top: 2rem;
-            padding: 1rem;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .loading-subtext {
+            font-size: 14px;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
-    <h1>MindTrace</h1>
-    <p>Journal your thoughts below. Our AI assistant will help reflect, reframe, and support your mental clarity.</p>
-
-    <form id="journalForm">
-        <textarea name="entry" id="entry" placeholder="Write your thoughts here..." required></textarea>
-        <button type="submit">Submit</button>
-    </form>
-
-    <div id="responseContainer" class="response" style="display: none;"></div>
-
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    
+    <!-- Loading screen -->
+    <div id="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Enterprise Wellness AI</div>
+        <div class="loading-subtext">Loading your wellness dashboard...</div>
+    </div>
+    
+    <!-- React app root -->
+    <div id="root"></div>
+    
     <script>
-        const form = document.getElementById('journalForm');
-        const responseContainer = document.getElementById('responseContainer');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const text = document.getElementById('entry').value;
-
-            const res = await fetch('/api/cbt', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
-            });
-
-            const data = await res.json();
-            responseContainer.style.display = 'block';
-            responseContainer.innerHTML = `<strong>Reflection:</strong><br><pre>${data.reflection}</pre>`;
+        // Hide loading screen when React app loads
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            }, 1000);
         });
     </script>
 </body>
