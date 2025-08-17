@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 
 from config.settings import settings
 from database.connection import init_db, check_db_connection
-from api.routes import wellness, auth, resources, analytics, users
+from api.routes import wellness, auth, resources, analytics, users, notifications, compliance, teams, admin
 from utils.monitoring import setup_monitoring
 from utils.logging import setup_logging
 
@@ -168,6 +168,10 @@ app.include_router(wellness.router, prefix="/api")
 app.include_router(resources.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
+app.include_router(compliance.router, prefix="/api")
+app.include_router(teams.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 
 # Serve static files (if any)
@@ -190,7 +194,11 @@ async def api_info():
             "wellness": "/api/wellness",
             "resources": "/api/resources",
             "analytics": "/api/analytics",
-            "users": "/api/users"
+            "users": "/api/users",
+            "notifications": "/api/notifications",
+            "compliance": "/api/compliance",
+            "teams": "/api/teams",
+            "admin": "/api/admin"
         },
         "features": {
             "ai_chat": settings.ENABLE_AI_CHAT,

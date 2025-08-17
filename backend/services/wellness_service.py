@@ -13,7 +13,7 @@ from sqlalchemy import and_, func
 
 from database.connection import get_db
 from database.schema import WellnessEntry, User, Conversation, Resource
-from agents.orchestrator import AdvancedAgentOrchestrator
+from agents.orchestrator import AgentOrchestrator
 from utils.analytics import WellnessAnalytics
 from utils.privacy import PrivacyManager
 
@@ -48,7 +48,7 @@ class WellnessService:
     """
     
     def __init__(self):
-        self.agent_orchestrator = AdvancedAgentOrchestrator()
+        self.agent_orchestrator = AgentOrchestrator()
         self.analytics = WellnessAnalytics()
         self.privacy_manager = PrivacyManager()
         self.logger = logging.getLogger(__name__)
