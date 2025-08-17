@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-ai-service
+  namespace: wellness-ai
+  labels:
+    app: wellness-ai-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: wellness-ai-backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-postgres
+  namespace: wellness-ai
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: wellness-postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-redis
+  namespace: wellness-ai
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: wellness-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-chromadb
+  namespace: wellness-ai
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: chromadb
+  selector:
+    app: wellness-chromadb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-prometheus
+  namespace: wellness-ai
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+    name: prometheus
+  selector:
+    app: wellness-prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-grafana
+  namespace: wellness-ai
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: grafana
+  selector:
+    app: wellness-grafana
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellness-opa
+  namespace: wellness-ai
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8181
+    targetPort: 8181
+    protocol: TCP
+    name: opa
+  selector:
+    app: wellness-opa

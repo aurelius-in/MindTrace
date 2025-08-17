@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wellness-ai-backend
+  namespace: wellness-ai
+  labels:
+    app: wellness-ai-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wellness-ai-backend
+  template:
+    metadata:
+      labels:
+        app: wellness-ai-backend
+    spec:
+      containers:
+      - name: wellness-ai
+        image: wellness-ai:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: wellness-ai-config
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: wellness-ai-config
+              key: REDIS_URL
+        - name: VECTOR_DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: wellness-ai-config
+              key: VECTOR_DB_URL
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wellness-ai-secrets
+              key: OPENAI_API_KEY
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wellness-ai-secrets
+              key: ANTHROPIC_API_KEY
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wellness-ai-secrets
+              key: SECRET_KEY
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wellness-ai-secrets
+              key: ENCRYPTION_KEY
+        - name: SLACK_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: wellness-ai-secrets
+              key: SLACK_BOT_TOKEN
+        - name: TEAMS_APP_ID
+          valueFrom:
+            secretKeyRef:
+              name: wellness-ai-secrets
+              key: TEAMS_APP_ID
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: wellness-ai-config
+              key: DEBUG
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: wellness-ai-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: wellness-ai-data-pvc
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: wellness-ai-logs-pvc
+      imagePullSecrets:
+      - name: wellness-ai-registry-secret
