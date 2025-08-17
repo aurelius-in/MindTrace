@@ -23,6 +23,7 @@ import {
   Security as RiskIcon,
   Policy as ComplianceIcon,
   Settings as SettingsIcon,
+  Person as ProfileIcon,
   ExpandLess,
   ExpandMore,
   CheckCircle as CheckInIcon,
@@ -55,44 +56,50 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
 
   const menuItems = [
     {
-      text: 'Dashboard',
+      text: 'My Journey',
       icon: <DashboardIcon />,
       path: '/dashboard',
       roles: ['employee', 'manager', 'hr', 'admin'],
     },
     {
-      text: 'Wellness',
+      text: 'Daily Check-in',
       icon: <WellnessIcon />,
       path: '/wellness/check-in',
       roles: ['employee', 'manager', 'hr', 'admin'],
     },
     {
-      text: 'Wellness Chat',
+      text: 'AI Companion',
       icon: <ChatIcon />,
       path: '/wellness/chat',
       roles: ['employee', 'manager', 'hr', 'admin'],
     },
     {
-      text: 'Wellness History',
-      icon: <HistoryIcon />,
-      path: '/wellness/history',
+      text: 'Learning Hub',
+      icon: <ResourcesIcon />,
+      path: '/resources',
       roles: ['employee', 'manager', 'hr', 'admin'],
     },
     {
-      text: 'Resources',
-      icon: <ResourcesIcon />,
-      path: '/resources',
+      text: 'Insights',
+      icon: <AnalyticsIcon />,
+      path: '/analytics',
+      roles: ['manager', 'hr', 'admin'],
+    },
+    {
+      text: 'Profile',
+      icon: <ProfileIcon />,
+      path: '/profile',
+      roles: ['employee', 'manager', 'hr', 'admin'],
+    },
+    {
+      text: 'Settings',
+      icon: <SettingsIcon />,
+      path: '/settings',
       roles: ['employee', 'manager', 'hr', 'admin'],
     },
   ];
 
   const analyticsItems = [
-    {
-      text: 'Analytics Overview',
-      icon: <AnalyticsIcon />,
-      path: '/analytics',
-      roles: ['manager', 'hr', 'admin'],
-    },
     {
       text: 'Team Analytics',
       icon: <TeamIcon />,
@@ -120,12 +127,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
       path: '/compliance',
       roles: ['hr', 'admin'],
     },
-    {
-      text: 'Settings',
-      icon: <SettingsIcon />,
-      path: '/settings',
-      roles: ['admin'],
-    },
   ];
 
   const drawerWidth = open ? 240 : 64;
@@ -139,14 +140,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#f8f9fa',
-          borderRight: '1px solid #e0e0e0',
+          backgroundColor: '#1a252f',
+          color: 'white',
+          borderRight: 'none',
           transition: 'width 0.3s ease',
           overflowX: 'hidden',
+          top: 64,
+          height: 'calc(100% - 64px)',
         },
       }}
     >
-      <Box sx={{ overflow: 'auto', mt: 8 }}>
+      <Box sx={{ overflow: 'auto', pt: 2 }}>
         <List>
           {/* Main Menu Items */}
           {menuItems.map((item) => {
@@ -162,11 +166,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                     justifyContent: open ? 'initial' : 'center',
                     px: 2.5,
                     '&.Mui-selected': {
-                      backgroundColor: 'primary.light',
-                      color: 'primary.main',
+                      backgroundColor: '#e74c3c',
+                      color: 'white',
                       '&:hover': {
-                        backgroundColor: 'primary.light',
+                        backgroundColor: '#c0392b',
                       },
+                    },
+                    '&:hover': {
+                      backgroundColor: '#2c3e50',
                     },
                   }}
                 >
@@ -175,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                       minWidth: 0,
                       mr: open ? 3 : 'auto',
                       justifyContent: 'center',
-                      color: isActive(item.path) ? 'primary.main' : 'inherit',
+                      color: isActive(item.path) ? 'white' : 'white',
                     }}
                   >
                     {item.icon}
@@ -186,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                       sx={{
                         '& .MuiListItemText-primary': {
                           fontWeight: isActive(item.path) ? 600 : 400,
+                          color: 'white',
                         },
                       }}
                     />
@@ -198,10 +206,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
           {/* Analytics Section */}
           {hasRole(['manager', 'hr', 'admin']) && (
             <>
-              <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 1, bgcolor: '#2c3e50' }} />
               {open && (
                 <Box sx={{ px: 2, py: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#bdc3c7' }}>
                     ANALYTICS
                   </Typography>
                 </Box>
@@ -214,6 +222,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                     minHeight: 48,
                     justifyContent: open ? 'initial' : 'center',
                     px: 2.5,
+                    '&:hover': {
+                      backgroundColor: '#2c3e50',
+                    },
                   }}
                 >
                   <ListItemIcon
@@ -221,14 +232,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                       minWidth: 0,
                       mr: open ? 3 : 'auto',
                       justifyContent: 'center',
+                      color: 'white',
                     }}
                   >
                     <AnalyticsIcon />
                   </ListItemIcon>
                   {open && (
                     <>
-                      <ListItemText primary="Analytics" />
-                      {analyticsOpen ? <ExpandLess /> : <ExpandMore />}
+                      <ListItemText primary="Analytics" sx={{ '& .MuiListItemText-primary': { color: 'white' } }} />
+                      {analyticsOpen ? <ExpandLess sx={{ color: 'white' }} /> : <ExpandMore sx={{ color: 'white' }} />}
                     </>
                   )}
                 </ListItemButton>
@@ -248,11 +260,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                             pl: 4,
                             minHeight: 48,
                             '&.Mui-selected': {
-                              backgroundColor: 'primary.light',
-                              color: 'primary.main',
+                              backgroundColor: '#e74c3c',
+                              color: 'white',
                               '&:hover': {
-                                backgroundColor: 'primary.light',
+                                backgroundColor: '#c0392b',
                               },
+                            },
+                            '&:hover': {
+                              backgroundColor: '#2c3e50',
                             },
                           }}
                         >
@@ -261,7 +276,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                               minWidth: 0,
                               mr: 3,
                               justifyContent: 'center',
-                              color: isActive(item.path) ? 'primary.main' : 'inherit',
+                              color: isActive(item.path) ? 'white' : 'white',
                             }}
                           >
                             {item.icon}
@@ -272,6 +287,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                               '& .MuiListItemText-primary': {
                                 fontWeight: isActive(item.path) ? 600 : 400,
                                 fontSize: '0.875rem',
+                                color: 'white',
                               },
                             }}
                           />
@@ -287,10 +303,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
           {/* Admin Section */}
           {hasRole(['hr', 'admin']) && (
             <>
-              <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 1, bgcolor: '#2c3e50' }} />
               {open && (
                 <Box sx={{ px: 2, py: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#bdc3c7' }}>
                     ADMINISTRATION
                   </Typography>
                 </Box>
@@ -309,11 +325,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         justifyContent: open ? 'initial' : 'center',
                         px: 2.5,
                         '&.Mui-selected': {
-                          backgroundColor: 'primary.light',
-                          color: 'primary.main',
+                          backgroundColor: '#e74c3c',
+                          color: 'white',
                           '&:hover': {
-                            backgroundColor: 'primary.light',
+                            backgroundColor: '#c0392b',
                           },
+                        },
+                        '&:hover': {
+                          backgroundColor: '#2c3e50',
                         },
                       }}
                     >
@@ -322,7 +341,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                           minWidth: 0,
                           mr: open ? 3 : 'auto',
                           justifyContent: 'center',
-                          color: isActive(item.path) ? 'primary.main' : 'inherit',
+                          color: isActive(item.path) ? 'white' : 'white',
                         }}
                       >
                         {item.icon}
@@ -333,6 +352,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                           sx={{
                             '& .MuiListItemText-primary': {
                               fontWeight: isActive(item.path) ? 600 : 400,
+                              color: 'white',
                             },
                           }}
                         />
