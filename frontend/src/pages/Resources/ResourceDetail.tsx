@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,18 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Slider,
+  Fab,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  Badge,
+  Skeleton,
+  useTheme,
+  useMediaQuery,
+  Fade,
+  Zoom,
+  Grow,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -53,6 +65,45 @@ import {
   Comment,
   ThumbUp,
   ThumbDown,
+  VolumeUp,
+  VolumeOff,
+  Fullscreen,
+  FullscreenExit,
+  Speed,
+  Subtitles,
+  Accessibility,
+  Visibility,
+  VisibilityOff,
+  Timer,
+  EmojiEvents,
+  Psychology,
+  SelfImprovement,
+  Spa,
+  FitnessCenter,
+  Restaurant,
+  School,
+  Work,
+  Family,
+  Pets,
+  Nature,
+  MusicNote,
+  VideoLibrary,
+  Article,
+  Podcasts,
+  Web,
+  Phone,
+  Email,
+  LinkedIn,
+  Twitter,
+  Facebook,
+  WhatsApp,
+  Telegram,
+  ContentCopy,
+  Check,
+  Error,
+  Warning,
+  Info,
+  Help,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -83,9 +134,12 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other })
 const ResourceDetail: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { resourceId } = useParams<{ resourceId: string }>();
   const { resources, favorites } = useSelector((state: RootState) => state.resources);
   
+  // State management
   const [tabValue, setTabValue] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -93,8 +147,27 @@ const ResourceDetail: React.FC = () => {
   const [comment, setComment] = useState('');
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [volume, setVolume] = useState(80);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSubtitles, setShowSubtitles] = useState(false);
+  const [accessibilityMode, setAccessibilityMode] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(900); // 15 minutes in seconds
+  const [userEngagement, setUserEngagement] = useState({
+    timeSpent: 0,
+    interactions: 0,
+    completionRate: 0,
+    lastAccessed: new Date(),
+  });
 
-  // Mock resource data (in real app, this would come from API)
+  // Refs
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaPlayerRef = useRef<HTMLDivElement>(null);
+
+  // Enhanced mock resource data
   const resource = {
     id: resourceId || '1',
     title: 'Mindfulness Meditation for Stress Relief',
@@ -104,44 +177,82 @@ const ResourceDetail: React.FC = () => {
     durationMinutes: 15,
     tags: ['meditation', 'stress-relief', 'mindfulness', 'beginner-friendly'],
     content: {
-      overview: 'This resource provides step-by-step guidance for practicing mindfulness meditation, specifically tailored for workplace stress management.',
+      overview: 'This resource provides step-by-step guidance for practicing mindfulness meditation, specifically tailored for workplace stress management. Learn proven techniques to reduce anxiety, improve focus, and enhance overall well-being.',
       instructions: [
-        'Find a quiet, comfortable space',
-        'Sit in a relaxed but alert posture',
-        'Close your eyes and take deep breaths',
-        'Focus on your breath and let thoughts pass by',
-        'Practice for 10-15 minutes daily'
+        'Find a quiet, comfortable space where you won\'t be interrupted',
+        'Sit in a relaxed but alert posture with your back straight',
+        'Close your eyes and take three deep, cleansing breaths',
+        'Focus your attention on your natural breath rhythm',
+        'When your mind wanders, gently bring it back to your breath',
+        'Practice for 10-15 minutes daily for best results'
       ],
       benefits: [
-        'Reduces stress and anxiety',
-        'Improves focus and concentration',
-        'Enhances emotional regulation',
-        'Promotes better sleep quality',
-        'Increases self-awareness'
+        'Reduces stress and anxiety levels by 40-60%',
+        'Improves focus and concentration in work tasks',
+        'Enhances emotional regulation and resilience',
+        'Promotes better sleep quality and recovery',
+        'Increases self-awareness and mindfulness',
+        'Lowers blood pressure and heart rate',
+        'Strengthens immune system function'
       ],
       tips: [
-        'Start with just 5 minutes and gradually increase',
-        'Be patient with yourself - meditation is a skill',
-        'Try different times of day to find what works best',
+        'Start with just 5 minutes and gradually increase duration',
+        'Be patient with yourself - meditation is a learned skill',
+        'Try different times of day to find what works best for you',
         'Use guided meditations if you\'re new to practice',
-        'Don\'t worry about "clearing your mind" - just observe thoughts'
+        'Don\'t worry about "clearing your mind" - just observe thoughts',
+        'Practice consistently rather than for long periods occasionally',
+        'Create a dedicated meditation space in your home or office'
+      ],
+      scientificEvidence: [
+        'Harvard study shows 8 weeks of mindfulness reduces stress by 35%',
+        'Stanford research links meditation to improved cognitive function',
+        'NIH study demonstrates reduced anxiety in workplace settings',
+        'Meta-analysis of 47 studies shows consistent stress reduction'
       ]
     },
     author: 'Dr. Sarah Johnson',
     authorCredentials: 'Licensed Clinical Psychologist, Mindfulness Expert',
+    authorBio: 'Dr. Johnson has over 15 years of experience in clinical psychology and mindfulness-based interventions. She has published over 50 peer-reviewed articles and has helped thousands of individuals reduce stress and improve mental well-being.',
     publishedDate: '2024-01-15',
     lastUpdated: '2024-01-20',
     rating: 4.7,
     reviewCount: 124,
     completionRate: 78,
     estimatedTime: '15 minutes',
-    prerequisites: 'None',
-    materials: ['Quiet space', 'Comfortable seating', 'Timer (optional)'],
+    prerequisites: 'None - suitable for all experience levels',
+    materials: ['Quiet space', 'Comfortable seating', 'Timer (optional)', 'Meditation cushion (optional)'],
+    mediaType: 'video', // 'video', 'audio', 'interactive', 'document'
+    mediaUrl: 'https://example.com/meditation-video.mp4',
+    thumbnail: 'https://example.com/meditation-thumbnail.jpg',
+    transcript: 'Welcome to mindfulness meditation...',
+    accessibility: {
+      hasSubtitles: true,
+      hasAudioDescription: false,
+      hasTranscript: true,
+      keyboardNavigable: true,
+      screenReaderCompatible: true,
+    },
     relatedResources: [
-      { id: '2', title: 'Breathing Exercises for Anxiety', category: 'stress-management' },
-      { id: '3', title: 'Progressive Muscle Relaxation', category: 'relaxation' },
-      { id: '4', title: 'Mindful Walking Practice', category: 'mindfulness' }
-    ]
+      { id: '2', title: 'Breathing Exercises for Anxiety', category: 'stress-management', duration: 10 },
+      { id: '3', title: 'Progressive Muscle Relaxation', category: 'relaxation', duration: 20 },
+      { id: '4', title: 'Mindful Walking Practice', category: 'mindfulness', duration: 15 },
+      { id: '5', title: 'Body Scan Meditation', category: 'mindfulness', duration: 25 },
+    ],
+    userProgress: {
+      completed: false,
+      timeSpent: 0,
+      lastPosition: 0,
+      bookmarks: [],
+      notes: [],
+    },
+    analytics: {
+      views: 1247,
+      completions: 973,
+      averageRating: 4.7,
+      engagementScore: 8.5,
+      popularTimes: ['9:00 AM', '12:00 PM', '6:00 PM'],
+    }
   };
 
   const isFavorite = favorites.includes(resource.id);
@@ -155,7 +266,33 @@ const ResourceDetail: React.FC = () => {
         interactionType: 'view',
       }));
     }
+
+    // Simulate loading
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+
+    // Cleanup interval on unmount
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
   }, [resourceId, dispatch]);
+
+  // Track user engagement
+  useEffect(() => {
+    const engagementInterval = setInterval(() => {
+      if (isPlaying) {
+        setUserEngagement(prev => ({
+          ...prev,
+          timeSpent: prev.timeSpent + 1,
+          interactions: prev.interactions + 1,
+        }));
+      }
+    }, 1000);
+
+    return () => clearInterval(engagementInterval);
+  }, [isPlaying]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -165,28 +302,71 @@ const ResourceDetail: React.FC = () => {
     setIsPlaying(!isPlaying);
     if (!isPlaying) {
       // Start progress simulation
-      const interval = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
-            clearInterval(interval);
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+            }
             setIsPlaying(false);
+            // Mark as completed
+            dispatch(addNotification({
+              type: 'success',
+              title: 'Resource Completed!',
+              message: 'Great job! You\'ve completed this mindfulness resource.',
+            }));
             return 100;
           }
-          return prev + 1;
+          return prev + (100 / (duration / 60)); // Progress based on duration
         });
       }, 1000);
+    } else {
+      // Pause
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     }
   };
 
   const handleStop = () => {
     setIsPlaying(false);
     setProgress(0);
+    setCurrentTime(0);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+  };
+
+  const handleSeek = (event: Event, newValue: number | number[]) => {
+    const seekTime = newValue as number;
+    setProgress(seekTime);
+    setCurrentTime((seekTime / 100) * duration);
+  };
+
+  const handleVolumeChange = (event: Event, newValue: number | number[]) => {
+    const newVolume = newValue as number;
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+    dispatch(addNotification({
+      type: 'info',
+      title: 'Playback Speed Changed',
+      message: `Speed set to ${speed}x`,
+    }));
   };
 
   const handleFavorite = () => {
     dispatch(recordInteraction({
       resourceId: resource.id,
       interactionType: 'like',
+    }));
+    dispatch(addNotification({
+      type: 'success',
+      title: isFavorite ? 'Removed from Favorites' : 'Added to Favorites',
+      message: isFavorite ? 'Resource removed from your favorites.' : 'Resource added to your favorites!',
     }));
   };
 
@@ -222,6 +402,12 @@ const ResourceDetail: React.FC = () => {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'beginner': return 'success';
@@ -232,24 +418,74 @@ const ResourceDetail: React.FC = () => {
   };
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'mindfulness': return '🧘';
-      case 'stress-management': return '😌';
-      case 'relaxation': return '🌿';
-      case 'exercise': return '💪';
-      case 'nutrition': return '🥗';
-      default: return '📚';
+    const iconMap: { [key: string]: React.ReactNode } = {
+      'mindfulness': <Psychology />,
+      'stress-management': <Spa />,
+      'relaxation': <SelfImprovement />,
+      'exercise': <FitnessCenter />,
+      'nutrition': <Restaurant />,
+      'education': <School />,
+      'work-life-balance': <Work />,
+      'relationships': <Family />,
+      'pet-therapy': <Pets />,
+      'nature': <Nature />,
+      'music': <MusicNote />,
+      'video': <VideoLibrary />,
+      'article': <Article />,
+      'podcast': <Podcasts />,
+      'webinar': <Web />,
+    };
+    return iconMap[category] || <Category />;
+  };
+
+  const getMediaTypeIcon = (mediaType: string) => {
+    switch (mediaType) {
+      case 'video': return <VideoLibrary />;
+      case 'audio': return <MusicNote />;
+      case 'interactive': return <Web />;
+      case 'document': return <Article />;
+      default: return <Article />;
     }
   };
 
+  if (isLoading) {
+    return (
+      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+        <Skeleton variant="rectangular" height={60} sx={{ mb: 3 }} />
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={8}>
+            <Skeleton variant="rectangular" height={400} sx={{ mb: 3 }} />
+            <Skeleton variant="rectangular" height={300} />
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <Skeleton variant="rectangular" height={200} sx={{ mb: 3 }} />
+            <Skeleton variant="rectangular" height={200} sx={{ mb: 3 }} />
+            <Skeleton variant="rectangular" height={200} />
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, mx: 'auto' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={() => navigate('/resources')} sx={{ mr: 2 }}>
+        <IconButton 
+          onClick={() => navigate('/resources')} 
+          sx={{ mr: 2 }}
+          aria-label="Go back to resources"
+        >
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" sx={{ fontWeight: 600, color: 'primary.main' }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 600, 
+            color: 'primary.main',
+            fontSize: { xs: '1.5rem', md: '2.125rem' }
+          }}
+        >
           {resource.title}
         </Typography>
       </Box>
@@ -257,15 +493,26 @@ const ResourceDetail: React.FC = () => {
       <Grid container spacing={3}>
         {/* Main Content */}
         <Grid item xs={12} lg={8}>
-          {/* Resource Header */}
-          <Card sx={{ mb: 3 }}>
+          {/* Enhanced Resource Header */}
+          <Card sx={{ mb: 3, position: 'relative', overflow: 'visible' }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      mb: 1,
+                      fontSize: { xs: '1.25rem', md: '1.5rem' }
+                    }}
+                  >
                     {resource.title}
                   </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography 
+                    variant="body1" 
+                    color="text.secondary" 
+                    sx={{ mb: 2, lineHeight: 1.6 }}
+                  >
                     {resource.description}
                   </Typography>
                   
@@ -274,6 +521,7 @@ const ResourceDetail: React.FC = () => {
                       label={resource.difficultyLevel}
                       color={getDifficultyColor(resource.difficultyLevel) as any}
                       size="small"
+                      icon={getCategoryIcon(resource.category)}
                     />
                     <Chip
                       icon={<AccessTime />}
@@ -287,46 +535,78 @@ const ResourceDetail: React.FC = () => {
                       size="small"
                       variant="outlined"
                     />
+                    <Chip
+                      icon={getMediaTypeIcon(resource.mediaType)}
+                      label={resource.mediaType}
+                      size="small"
+                      variant="outlined"
+                    />
                   </Box>
                 </Box>
                 
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton onClick={handleFavorite}>
-                    {isFavorite ? <Favorite color="error" /> : <FavoriteBorder />}
-                  </IconButton>
-                  <IconButton onClick={handleBookmark}>
-                    {isBookmarked ? <Bookmark color="primary" /> : <BookmarkBorder />}
-                  </IconButton>
-                  <IconButton onClick={handleShare}>
-                    <Share />
-                  </IconButton>
+                <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                  <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"}>
+                    <IconButton onClick={handleFavorite} color={isFavorite ? "error" : "default"}>
+                      {isFavorite ? <Favorite /> : <FavoriteBorder />}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={isBookmarked ? "Remove bookmark" : "Add bookmark"}>
+                    <IconButton onClick={handleBookmark} color={isBookmarked ? "primary" : "default"}>
+                      {isBookmarked ? <Bookmark /> : <BookmarkBorder />}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Share resource">
+                    <IconButton onClick={handleShare}>
+                      <Share />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               </Box>
 
-              {/* Progress Bar */}
+              {/* Enhanced Progress Bar */}
               <Box sx={{ mb: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2" color="text.secondary">
                     Progress
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {progress}%
+                    {Math.round(progress)}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
                   value={progress}
-                  sx={{ height: 8, borderRadius: 4 }}
+                  sx={{ 
+                    height: 8, 
+                    borderRadius: 4,
+                    backgroundColor: 'grey.200',
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 4,
+                      background: 'linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%)',
+                    }
+                  }}
                 />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatTime(currentTime)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatTime(duration)}
+                  </Typography>
+                </Box>
               </Box>
 
-              {/* Action Buttons */}
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              {/* Enhanced Action Buttons */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                 <Button
                   variant="contained"
                   startIcon={isPlaying ? <Pause /> : <PlayArrow />}
                   onClick={handlePlayPause}
-                  sx={{ minWidth: 120 }}
+                  sx={{ 
+                    minWidth: 120,
+                    background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                    boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                  }}
                 >
                   {isPlaying ? 'Pause' : 'Start'}
                 </Button>
@@ -343,10 +623,19 @@ const ResourceDetail: React.FC = () => {
                 >
                   Download
                 </Button>
+                {resource.accessibility.hasSubtitles && (
+                  <Button
+                    variant="outlined"
+                    startIcon={showSubtitles ? <Visibility /> : <VisibilityOff />}
+                    onClick={() => setShowSubtitles(!showSubtitles)}
+                  >
+                    {showSubtitles ? 'Hide' : 'Show'} Subtitles
+                  </Button>
+                )}
               </Box>
 
-              {/* Rating */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Enhanced Rating Display */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <Rating
                   value={resource.rating}
                   readOnly
@@ -359,25 +648,35 @@ const ResourceDetail: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   • {resource.completionRate}% completion rate
                 </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  • {resource.analytics.views} views
+                </Typography>
               </Box>
             </CardContent>
           </Card>
 
-          {/* Content Tabs */}
+          {/* Enhanced Content Tabs */}
           <Card>
             <CardContent>
               <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                <Tabs value={tabValue} onChange={handleTabChange} aria-label="resource content tabs">
+                <Tabs 
+                  value={tabValue} 
+                  onChange={handleTabChange} 
+                  aria-label="resource content tabs"
+                  variant={isMobile ? "scrollable" : "fullWidth"}
+                  scrollButtons={isMobile ? "auto" : false}
+                >
                   <Tab label="Overview" />
                   <Tab label="Instructions" />
                   <Tab label="Benefits" />
                   <Tab label="Tips" />
+                  <Tab label="Evidence" />
                 </Tabs>
               </Box>
 
               {/* Overview Tab */}
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="body1" sx={{ mb: 3 }}>
+                <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
                   {resource.content.overview}
                 </Typography>
                 
@@ -409,8 +708,28 @@ const ResourceDetail: React.FC = () => {
                           label={material}
                           size="small"
                           variant="outlined"
+                          icon={<CheckCircle />}
                         />
                       ))}
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                      Accessibility Features
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {resource.accessibility.hasSubtitles && (
+                        <Chip label="Subtitles" size="small" variant="outlined" />
+                      )}
+                      {resource.accessibility.hasTranscript && (
+                        <Chip label="Transcript" size="small" variant="outlined" />
+                      )}
+                      {resource.accessibility.keyboardNavigable && (
+                        <Chip label="Keyboard Navigation" size="small" variant="outlined" />
+                      )}
+                      {resource.accessibility.screenReaderCompatible && (
+                        <Chip label="Screen Reader Compatible" size="small" variant="outlined" />
+                      )}
                     </Box>
                   </Grid>
                 </Grid>
@@ -420,13 +739,29 @@ const ResourceDetail: React.FC = () => {
               <TabPanel value={tabValue} index={1}>
                 <List>
                   {resource.content.instructions.map((instruction, index) => (
-                    <ListItem key={index}>
+                    <ListItem key={index} sx={{ py: 1.5 }}>
                       <ListItemIcon>
-                        <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                        <Avatar 
+                          sx={{ 
+                            bgcolor: 'primary.main', 
+                            width: 32, 
+                            height: 32,
+                            fontSize: '0.875rem',
+                            fontWeight: 600
+                          }}
+                        >
                           {index + 1}
                         </Avatar>
                       </ListItemIcon>
-                      <ListItemText primary={instruction} />
+                      <ListItemText 
+                        primary={instruction} 
+                        sx={{ 
+                          '& .MuiListItemText-primary': {
+                            lineHeight: 1.6,
+                            fontSize: '1rem'
+                          }
+                        }}
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -436,11 +771,19 @@ const ResourceDetail: React.FC = () => {
               <TabPanel value={tabValue} index={2}>
                 <List>
                   {resource.content.benefits.map((benefit, index) => (
-                    <ListItem key={index}>
+                    <ListItem key={index} sx={{ py: 1.5 }}>
                       <ListItemIcon>
-                        <CheckCircle color="success" />
+                        <CheckCircle color="success" sx={{ fontSize: 28 }} />
                       </ListItemIcon>
-                      <ListItemText primary={benefit} />
+                      <ListItemText 
+                        primary={benefit} 
+                        sx={{ 
+                          '& .MuiListItemText-primary': {
+                            lineHeight: 1.6,
+                            fontSize: '1rem'
+                          }
+                        }}
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -450,11 +793,44 @@ const ResourceDetail: React.FC = () => {
               <TabPanel value={tabValue} index={3}>
                 <List>
                   {resource.content.tips.map((tip, index) => (
-                    <ListItem key={index}>
+                    <ListItem key={index} sx={{ py: 1.5 }}>
                       <ListItemIcon>
-                        <Star color="primary" />
+                        <Star color="primary" sx={{ fontSize: 28 }} />
                       </ListItemIcon>
-                      <ListItemText primary={tip} />
+                      <ListItemText 
+                        primary={tip} 
+                        sx={{ 
+                          '& .MuiListItemText-primary': {
+                            lineHeight: 1.6,
+                            fontSize: '1rem'
+                          }
+                        }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </TabPanel>
+
+              {/* Scientific Evidence Tab */}
+              <TabPanel value={tabValue} index={4}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  Scientific Evidence & Research
+                </Typography>
+                <List>
+                  {resource.content.scientificEvidence.map((evidence, index) => (
+                    <ListItem key={index} sx={{ py: 1.5 }}>
+                      <ListItemIcon>
+                        <School color="info" sx={{ fontSize: 28 }} />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={evidence} 
+                        sx={{ 
+                          '& .MuiListItemText-primary': {
+                            lineHeight: 1.6,
+                            fontSize: '1rem'
+                          }
+                        }}
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -463,9 +839,9 @@ const ResourceDetail: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Sidebar */}
+        {/* Enhanced Sidebar */}
         <Grid item xs={12} lg={4}>
-          {/* Author Info */}
+          {/* Enhanced Author Info */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -473,7 +849,15 @@ const ResourceDetail: React.FC = () => {
               </Typography>
               
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                <Avatar 
+                  sx={{ 
+                    mr: 2, 
+                    bgcolor: 'primary.main',
+                    width: 56,
+                    height: 56,
+                    fontSize: '1.25rem'
+                  }}
+                >
                   {resource.author.split(' ').map(n => n[0]).join('')}
                 </Avatar>
                 <Box>
@@ -486,6 +870,12 @@ const ResourceDetail: React.FC = () => {
                 </Box>
               </Box>
               
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+                {resource.authorBio}
+              </Typography>
+              
+              <Divider sx={{ my: 2 }} />
+              
               <Typography variant="body2" color="text.secondary">
                 Published: {new Date(resource.publishedDate).toLocaleDateString()}
               </Typography>
@@ -495,7 +885,7 @@ const ResourceDetail: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Related Resources */}
+          {/* Enhanced Related Resources */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -508,15 +898,20 @@ const ResourceDetail: React.FC = () => {
                     key={related.id}
                     button
                     onClick={() => navigate(`/resources/${related.id}`)}
+                    sx={{ 
+                      borderRadius: 1, 
+                      mb: 1,
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      }
+                    }}
                   >
                     <ListItemIcon>
-                      <span style={{ fontSize: '1.5rem' }}>
-                        {getCategoryIcon(related.category)}
-                      </span>
+                      {getCategoryIcon(related.category)}
                     </ListItemIcon>
                     <ListItemText
                       primary={related.title}
-                      secondary={related.category.replace('-', ' ')}
+                      secondary={`${related.category.replace('-', ' ')} • ${related.duration} min`}
                     />
                   </ListItem>
                 ))}
@@ -524,7 +919,7 @@ const ResourceDetail: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Feedback */}
+          {/* Enhanced Feedback */}
           <Card>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -546,6 +941,7 @@ const ResourceDetail: React.FC = () => {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 sx={{ mb: 2 }}
+                variant="outlined"
               />
               
               <Button
@@ -553,6 +949,10 @@ const ResourceDetail: React.FC = () => {
                 onClick={handleComment}
                 disabled={!comment.trim()}
                 fullWidth
+                sx={{
+                  background: 'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)',
+                  boxShadow: '0 3px 5px 2px rgba(76, 175, 80, .3)',
+                }}
               >
                 Submit Feedback
               </Button>
@@ -561,16 +961,31 @@ const ResourceDetail: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Share Dialog */}
+      {/* Enhanced Share Dialog */}
       <Dialog
         open={showShareDialog}
         onClose={() => setShowShareDialog(false)}
         maxWidth="sm"
         fullWidth
+        TransitionComponent={Zoom}
       >
-        <DialogTitle>Share Resource</DialogTitle>
+        <DialogTitle>
+          Share Resource
+          <IconButton
+            aria-label="close"
+            onClick={() => setShowShareDialog(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ mb: 3 }}>
             Share this resource with your colleagues or on social media.
           </Typography>
           
@@ -579,22 +994,7 @@ const ResourceDetail: React.FC = () => {
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => {
-                  navigator.share?.({
-                    title: resource.title,
-                    text: resource.description,
-                    url: window.location.href,
-                  });
-                  setShowShareDialog(false);
-                }}
-              >
-                Share Link
-              </Button>
-            </Grid>
-            <Grid item xs={6}>
-              <Button
-                variant="outlined"
-                fullWidth
+                startIcon={<ContentCopy />}
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   dispatch(addNotification({
@@ -608,12 +1008,102 @@ const ResourceDetail: React.FC = () => {
                 Copy Link
               </Button>
             </Grid>
+            <Grid item xs={6}>
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<Email />}
+                onClick={() => {
+                  const subject = encodeURIComponent(`Check out this resource: ${resource.title}`);
+                  const body = encodeURIComponent(`I found this great wellness resource that might help you: ${resource.title}\n\n${resource.description}\n\n${window.location.href}`);
+                  window.open(`mailto:?subject=${subject}&body=${body}`);
+                  setShowShareDialog(false);
+                }}
+              >
+                Email
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<LinkedIn />}
+                onClick={() => {
+                  const url = encodeURIComponent(window.location.href);
+                  const title = encodeURIComponent(resource.title);
+                  const summary = encodeURIComponent(resource.description);
+                  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${title}&summary=${summary}`);
+                  setShowShareDialog(false);
+                }}
+              >
+                LinkedIn
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<Twitter />}
+                onClick={() => {
+                  const text = encodeURIComponent(`Check out this wellness resource: ${resource.title}`);
+                  const url = encodeURIComponent(window.location.href);
+                  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`);
+                  setShowShareDialog(false);
+                }}
+              >
+                Twitter
+              </Button>
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowShareDialog(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Speed Dial for Quick Actions */}
+      <SpeedDial
+        ariaLabel="Quick actions"
+        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+      >
+        <SpeedDialAction
+          icon={<Accessibility />}
+          tooltipTitle="Accessibility"
+          onClick={() => setAccessibilityMode(!accessibilityMode)}
+        />
+        <SpeedDialAction
+          icon={<Speed />}
+          tooltipTitle="Playback Speed"
+          onClick={() => handleSpeedChange(playbackSpeed === 1 ? 1.5 : 1)}
+        />
+        <SpeedDialAction
+          icon={<VolumeUp />}
+          tooltipTitle="Volume"
+          onClick={() => setIsMuted(!isMuted)}
+        />
+        <SpeedDialAction
+          icon={<Fullscreen />}
+          tooltipTitle="Fullscreen"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+        />
+      </SpeedDial>
+
+      {/* Accessibility Mode Overlay */}
+      {accessibilityMode && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            zIndex: 1000,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
     </Box>
   );
 };
