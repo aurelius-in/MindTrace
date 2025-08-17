@@ -81,9 +81,9 @@ const Header: React.FC = () => {
       position="sticky"
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: 'white',
-        color: 'text.primary',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        backgroundColor: '#1a252f',
+        color: 'white',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
       }}
     >
       <Toolbar>
@@ -102,9 +102,9 @@ const Header: React.FC = () => {
         <Typography
           variant="h6"
           component="div"
-          sx={{ flexGrow: 1, fontWeight: 600, color: 'primary.main' }}
+          sx={{ flexGrow: 1, fontWeight: 600, color: 'white' }}
         >
-          Enterprise Wellness AI
+          🌟 Wellness Journey
         </Typography>
 
         {/* Right Side Actions */}
@@ -128,16 +128,17 @@ const Header: React.FC = () => {
               onClick={handleProfileMenuOpen}
               sx={{ ml: 1 }}
             >
-              <Avatar
+              <Box
                 sx={{
-                  width: 32,
-                  height: 32,
-                  bgcolor: 'primary.main',
-                  fontSize: '0.875rem',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundImage: 'url(https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: '2px solid #ffffff'
                 }}
-              >
-                {user ? getInitials(user.firstName, user.lastName) : 'U'}
-              </Avatar>
+              />
             </IconButton>
           </Tooltip>
         </Box>
@@ -151,7 +152,15 @@ const Header: React.FC = () => {
             sx: {
               mt: 1,
               minWidth: 200,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              bgcolor: '#34495e',
+              color: 'white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              '& .MuiMenuItem-root': {
+                color: 'white',
+                '&:hover': {
+                  bgcolor: '#2c3e50',
+                },
+              },
             },
           }}
         >
@@ -159,18 +168,18 @@ const Header: React.FC = () => {
             <>
               <MenuItem disabled>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'white' }}>
                     {user.firstName} {user.lastName}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" sx={{ color: '#bdc3c7' }}>
                     {getRoleDisplayName(user.roles)}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" sx={{ color: '#bdc3c7' }}>
                     {user.email}
                   </Typography>
                 </Box>
               </MenuItem>
-              <Divider />
+              <Divider sx={{ bgcolor: '#2c3e50' }} />
             </>
           )}
 
@@ -184,7 +193,7 @@ const Header: React.FC = () => {
             Settings
           </MenuItem>
 
-          <Divider />
+          <Divider sx={{ bgcolor: '#2c3e50' }} />
 
           <MenuItem onClick={handleLogout}>
             <Logout sx={{ mr: 2 }} />
@@ -202,28 +211,36 @@ const Header: React.FC = () => {
               mt: 1,
               minWidth: 300,
               maxHeight: 400,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              bgcolor: '#34495e',
+              color: 'white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              '& .MuiMenuItem-root': {
+                color: 'white',
+                '&:hover': {
+                  bgcolor: '#2c3e50',
+                },
+              },
             },
           }}
         >
           <MenuItem disabled>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'white' }}>
               Notifications
             </Typography>
           </MenuItem>
-          <Divider />
+          <Divider sx={{ bgcolor: '#2c3e50' }} />
           <MenuItem>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ color: '#bdc3c7' }}>
               Welcome back! How are you feeling today?
             </Typography>
           </MenuItem>
           <MenuItem>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ color: '#bdc3c7' }}>
               New wellness resources available
             </Typography>
           </MenuItem>
           <MenuItem>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ color: '#bdc3c7' }}>
               Weekly wellness check-in reminder
             </Typography>
           </MenuItem>
