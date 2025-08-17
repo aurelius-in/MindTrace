@@ -66,16 +66,116 @@ def get_db_context():
 
 def init_db():
     """
-    Initialize database tables
+    Initialize database tables and seed initial data
     """
-    from database.schema import Base
+    from database.schema import Base, User, SystemSettings, Resource, ResourceCategory, DifficultyLevel
     
     try:
         # Create all tables
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
+        
+        # Seed initial data
+        seed_initial_data()
+        
     except Exception as e:
         logger.error(f"Failed to create database tables: {e}")
+        raise
+
+
+def seed_initial_data():
+    """
+    Seed initial data for the application
+    """
+    try:
+        with get_db_context() as db:
+            # Check if data already exists
+            if db.query(SystemSettings).count() == 0:
+                # Seed system settings
+                initial_settings = [
+                    {
+                        "setting_key": "wellness_checkin_frequency",
+                        "setting_value": "weekly",
+                        "setting_type": "string",
+                        "description": "Default frequency for wellness check-ins",
+                        "category": "wellness"
+                    },
+                    {
+                        "setting_key": "risk_threshold_high",
+                        "setting_value": "75",
+                        "setting_type": "integer",
+                        "description": "High risk threshold percentage",
+                        "category": "risk_assessment"
+                    },
+                    {
+                        "setting_key": "risk_threshold_medium",
+                        "setting_value": "50",
+                        "setting_type": "integer",
+                        "description": "Medium risk threshold percentage",
+                        "category": "risk_assessment"
+                    },
+                    {
+                        "setting_key": "notification_enabled",
+                        "setting_value": "true",
+                        "setting_type": "boolean",
+                        "description": "Enable system notifications",
+                        "category": "notifications"
+                    },
+                    {
+                        "setting_key": "privacy_anonymization",
+                        "setting_value": "true",
+                        "setting_type": "boolean",
+                        "description": "Enable data anonymization",
+                        "category": "privacy"
+                    }
+                ]
+                
+                for setting_data in initial_settings:
+                    setting = SystemSettings(**setting_data)
+                    db.add(setting)
+                
+                # Seed sample resources
+                sample_resources = [
+                    {
+                        "title": "Stress Management Techniques",
+                        "description": "Learn effective stress management techniques for the workplace",
+                        "category": ResourceCategory.STRESS_MANAGEMENT.value,
+                        "difficulty_level": DifficultyLevel.BEGINNER.value,
+                        "duration_minutes": 15,
+                        "tags": ["stress", "workplace", "techniques"],
+                        "author": "Wellness Team"
+                    },
+                    {
+                        "title": "Mindfulness Meditation Guide",
+                        "description": "A comprehensive guide to mindfulness meditation practices",
+                        "category": ResourceCategory.MINDFULNESS.value,
+                        "difficulty_level": DifficultyLevel.INTERMEDIATE.value,
+                        "duration_minutes": 20,
+                        "tags": ["mindfulness", "meditation", "mental-health"],
+                        "author": "Wellness Team"
+                    },
+                    {
+                        "title": "Work-Life Balance Strategies",
+                        "description": "Practical strategies for maintaining work-life balance",
+                        "category": ResourceCategory.WORK_LIFE_BALANCE.value,
+                        "difficulty_level": DifficultyLevel.BEGINNER.value,
+                        "duration_minutes": 10,
+                        "tags": ["work-life-balance", "strategies", "wellness"],
+                        "author": "Wellness Team"
+                    }
+                ]
+                
+                for resource_data in sample_resources:
+                    resource = Resource(**resource_data)
+                    db.add(resource)
+                
+                db.commit()
+                logger.info("Initial data seeded successfully")
+            else:
+                logger.info("Initial data already exists, skipping seed")
+                
+    except Exception as e:
+        logger.error(f"Failed to seed initial data: {e}")
         raise
 
 
