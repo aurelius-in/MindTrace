@@ -1,266 +1,151 @@
-from sqlalchemy import create_engine, event
+"""
+Database Connection - SQLAlchemy database configuration and session management
+"""
+
+import os
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import QueuePool
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.pool import StaticPool
 from contextlib import contextmanager
 import logging
-from typing import Generator, Optional
-import asyncio
-from functools import wraps
 
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# Database engine configuration
+# Database URL configuration
+DATABASE_URL = settings.DATABASE_URL
+
+# Engine configuration
 engine = create_engine(
-    settings.database.url,
-    poolclass=QueuePool,
-    pool_size=settings.database.pool_size,
-    max_overflow=settings.database.max_overflow,
+    DATABASE_URL,
+    poolclass=StaticPool,
     pool_pre_ping=True,
-    pool_recycle=3600,  # Recycle connections after 1 hour
-    echo=settings.debug,
+    pool_recycle=300,
+    echo=settings.DEBUG,  # Enable SQL logging in debug mode
     connect_args={
-        "connect_timeout": 10,
-        "application_name": "wellness_ai"
-    }
+        "check_same_thread": False
+    } if "sqlite" in DATABASE_URL else {}
 )
 
 # Session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_database() -> Session:
+
+def get_db() -> Session:
     """
-    Get a database session.
-    Use this in dependency injection for FastAPI endpoints.
+    Get database session
     """
     db = SessionLocal()
     try:
         yield db
+    except Exception as e:
+        logger.error(f"Database session error: {e}")
+        db.rollback()
+        raise
     finally:
         db.close()
 
+
 @contextmanager
-def get_db_session() -> Generator[Session, None, None]:
+def get_db_context():
     """
-    Context manager for database sessions.
-    Use this for manual session management.
+    Context manager for database sessions
     """
     db = SessionLocal()
     try:
         yield db
         db.commit()
     except Exception as e:
+        logger.error(f"Database context error: {e}")
         db.rollback()
-        logger.error(f"Database session error: {e}")
         raise
     finally:
         db.close()
 
-def get_async_database():
+
+def init_db():
     """
-    Async wrapper for database sessions.
-    Use this in async FastAPI endpoints.
+    Initialize database tables
     """
-    def async_get_db():
-        with get_db_session() as session:
-            yield session
+    from database.schema import Base
     
-    return async_get_db
-
-def with_db_session(func):
-    """
-    Decorator to automatically handle database sessions.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        with get_db_session() as db:
-            return func(db, *args, **kwargs)
-    return wrapper
-
-def with_async_db_session(func):
-    """
-    Async decorator to automatically handle database sessions.
-    """
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        with get_db_session() as db:
-            return await func(db, *args, **kwargs)
-    return wrapper
-
-def init_database():
-    """
-    Initialize the database by creating all tables.
-    """
     try:
-        from .schema import Base
+        # Create all tables
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
-    except SQLAlchemyError as e:
-        logger.error(f"Failed to initialize database: {e}")
+    except Exception as e:
+        logger.error(f"Failed to create database tables: {e}")
         raise
 
-def check_database_connection() -> bool:
+
+def check_db_connection():
     """
-    Check if the database connection is working.
+    Check database connection
     """
     try:
-        with get_db_session() as db:
+        with get_db_context() as db:
             db.execute("SELECT 1")
+        logger.info("Database connection successful")
         return True
-    except SQLAlchemyError as e:
-        logger.error(f"Database connection check failed: {e}")
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
         return False
 
-def get_database_stats() -> dict:
+
+def get_db_stats():
     """
-    Get database connection pool statistics.
+    Get database statistics
     """
-    pool = engine.pool
-    return {
-        "pool_size": pool.size(),
-        "checked_in": pool.checkedin(),
-        "checked_out": pool.checkedout(),
-        "overflow": pool.overflow(),
-        "invalid": pool.invalid()
-    }
-
-# Database event listeners for logging and monitoring
-@event.listens_for(engine, "connect")
-def receive_connect(dbapi_connection, connection_record):
-    logger.debug("Database connection established")
-
-@event.listens_for(engine, "disconnect")
-def receive_disconnect(dbapi_connection, connection_record):
-    logger.debug("Database connection closed")
-
-@event.listens_for(engine, "checkout")
-def receive_checkout(dbapi_connection, connection_record, connection_proxy):
-    logger.debug("Database connection checked out")
-
-@event.listens_for(engine, "checkin")
-def receive_checkin(dbapi_connection, connection_record):
-    logger.debug("Database connection checked in")
-
-# Health check function
-async def health_check() -> dict:
-    """
-    Perform a comprehensive database health check.
-    """
-    health_status = {
-        "database": {
-            "status": "unknown",
-            "connection": False,
-            "pool_stats": None,
-            "error": None
-        }
-    }
-    
     try:
-        # Check connection
-        if check_database_connection():
-            health_status["database"]["connection"] = True
-            health_status["database"]["status"] = "healthy"
+        with get_db_context() as db:
+            # Get table counts
+            from database.schema import User, WellnessEntry, Conversation, Resource
             
-            # Get pool statistics
-            health_status["database"]["pool_stats"] = get_database_stats()
-        else:
-            health_status["database"]["status"] = "unhealthy"
-            health_status["database"]["error"] = "Connection failed"
+            stats = {
+                "users": db.query(User).count(),
+                "wellness_entries": db.query(WellnessEntry).count(),
+                "conversations": db.query(Conversation).count(),
+                "resources": db.query(Resource).count(),
+            }
             
+            return stats
     except Exception as e:
-        health_status["database"]["status"] = "error"
-        health_status["database"]["error"] = str(e)
-        logger.error(f"Database health check failed: {e}")
-    
-    return health_status
+        logger.error(f"Failed to get database stats: {e}")
+        return {}
+
 
 # Database migration utilities
-def create_migration(description: str) -> str:
+def run_migrations():
     """
-    Create a new database migration.
-    This is a placeholder for Alembic integration.
-    """
-    # TODO: Implement Alembic migration creation
-    logger.info(f"Migration requested: {description}")
-    return f"migration_{description.lower().replace(' ', '_')}"
-
-def run_migrations() -> bool:
-    """
-    Run pending database migrations.
-    This is a placeholder for Alembic integration.
+    Run database migrations
     """
     try:
-        # TODO: Implement Alembic migration runner
-        logger.info("Database migrations completed successfully")
-        return True
+        # This would typically use Alembic for migrations
+        # For now, we'll just recreate tables
+        init_db()
+        logger.info("Database migrations completed")
     except Exception as e:
-        logger.error(f"Database migration failed: {e}")
-        return False
+        logger.error(f"Migration failed: {e}")
+        raise
 
-# Connection pool monitoring
-async def monitor_connection_pool():
-    """
-    Monitor database connection pool health.
-    """
-    while True:
-        try:
-            stats = get_database_stats()
-            logger.debug(f"Connection pool stats: {stats}")
-            
-            # Alert if pool is getting full
-            if stats["checked_out"] > stats["pool_size"] * 0.8:
-                logger.warning("Database connection pool is getting full")
-            
-            await asyncio.sleep(60)  # Check every minute
-            
-        except Exception as e:
-            logger.error(f"Connection pool monitoring error: {e}")
-            await asyncio.sleep(60)
 
-# Database cleanup utilities
-def cleanup_old_data():
+def backup_database():
     """
-    Clean up old data based on retention policies.
+    Create database backup
     """
     try:
-        with get_db_session() as db:
-            # TODO: Implement data cleanup based on retention policies
-            # This could include cleaning up old audit logs, system metrics, etc.
-            logger.info("Database cleanup completed")
+        if "sqlite" in DATABASE_URL:
+            import shutil
+            from datetime import datetime
+            
+            backup_path = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+            shutil.copy2(DATABASE_URL.replace("sqlite:///", ""), backup_path)
+            logger.info(f"Database backup created: {backup_path}")
+            return backup_path
+        else:
+            logger.warning("Database backup not implemented for this database type")
+            return None
     except Exception as e:
-        logger.error(f"Database cleanup failed: {e}")
-
-def vacuum_database():
-    """
-    Perform database maintenance (PostgreSQL specific).
-    """
-    try:
-        with get_db_session() as db:
-            db.execute("VACUUM ANALYZE")
-            logger.info("Database vacuum completed")
-    except Exception as e:
-        logger.error(f"Database vacuum failed: {e}")
-
-# Export commonly used functions
-__all__ = [
-    'get_database',
-    'get_db_session',
-    'get_async_database',
-    'with_db_session',
-    'with_async_db_session',
-    'init_database',
-    'check_database_connection',
-    'get_database_stats',
-    'health_check',
-    'create_migration',
-    'run_migrations',
-    'monitor_connection_pool',
-    'cleanup_old_data',
-    'vacuum_database'
-]
+        logger.error(f"Backup failed: {e}")
+        return None
