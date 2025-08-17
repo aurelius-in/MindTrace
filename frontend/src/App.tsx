@@ -26,6 +26,9 @@ import RiskAssessment from './pages/Analytics/RiskAssessment';
 import Compliance from './pages/Compliance/Compliance';
 import Settings from './pages/Settings/Settings';
 import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
 import Profile from './pages/Profile/Profile';
 
 // Components
@@ -220,6 +223,9 @@ const App: React.FC = () => {
         /* Authentication Routes */
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       )}
