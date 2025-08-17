@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { mockResources, preloadedSearch } from '../../mock-data';
+import { mockResources, preloadedSearch } from '../../mock-data/index';
 
 export interface Resource {
   id: string;

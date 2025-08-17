@@ -1,167 +1,101 @@
 # Enterprise Employee Wellness AI - Demo
 
-This is a demo version of the Enterprise Employee Wellness AI platform that showcases the user interface and functionality with realistic mock data.
+This is a demo version of the Enterprise Employee Wellness AI platform that showcases the application's features with realistic mock data.
 
-## Features
+## Features Demonstrated
 
-- **Auto-login**: The demo automatically logs in with a sample user account
-- **Realistic Mock Data**: Comprehensive mock data including users, wellness entries, resources, and analytics
-- **Pre-loaded Search**: The Resources page comes pre-loaded with a search for "stress management techniques"
-- **Full UI Navigation**: Complete navigation through all major sections of the application
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
+### 🏠 Dashboard
+- Welcome overview with platform features
+- Quick stats display (mood, stress, energy levels)
+- Recent activity feed
+- Interactive demo buttons
 
-## Quick Start
+### 💚 Wellness Check-in
+- Comprehensive wellness assessment interface
+- Mood, stress, and energy level tracking
+- Sleep quality and work-life balance evaluation
+- AI-powered recommendations
 
-1. **Install Dependencies**:
+### 🤖 AI Wellness Chat
+- Confidential conversation interface
+- AI wellness companion
+- Coping strategies and advice
+- Support for mental health discussions
+
+### 📚 Resources Library
+- Wellness resource cards
+- Categories: Mental Health, Meditation, Physical Wellness, Sleep, Nutrition, Social Wellness
+- Interactive resource viewing
+
+### 📊 Analytics & Insights
+- Organizational health metrics
+- Risk assessment overview
+- Employee satisfaction tracking
+- Team collaboration insights
+
+## Getting Started
+
+1. **Install Dependencies**
    ```bash
-   cd demo
    npm install
    ```
 
-2. **Start the Demo**:
+2. **Start the Demo**
    ```bash
    npm start
    ```
 
-3. **Open in Browser**:
-   The demo will open automatically at `http://localhost:3000`
+3. **Access the Application**
+   - Open your browser to `http://localhost:3000`
+   - The demo automatically logs you in as a demo user
+   - Explore the different sections using the sidebar navigation
 
 ## Demo Features
 
-### Dashboard
-- Overview of wellness metrics
-- Quick action cards for main features
-- Recent activity feed
+- **Auto-login**: No authentication required - automatically logged in as demo user
+- **Mock Data**: Realistic data showing wellness metrics, resources, and analytics
+- **Interactive Elements**: Click buttons to see demo actions
+- **Responsive Design**: Works on desktop and mobile devices
+- **Material-UI**: Modern, professional interface design
 
-### Resources
-- Pre-loaded search for "stress management techniques"
-- Filterable resource library
-- Realistic resource cards with ratings and metadata
+## Navigation
 
-### Analytics (Manager/HR Access)
-- Organizational health metrics
-- Team analytics
-- Risk assessment data
-
-### Navigation
-- Collapsible sidebar with role-based access
-- Header with user profile and notifications
-- Responsive design for all screen sizes
-
-## Mock Data
-
-The demo includes realistic mock data for:
-
-- **Users**: Sample employees with different roles and departments
-- **Wellness Entries**: Historical wellness check-ins with detailed metrics
-- **Resources**: Wellness resources with ratings, categories, and descriptions
-- **Analytics**: Organizational health data, team metrics, and risk assessments
-- **Notifications**: Sample notifications and alerts
-
-## Demo Credentials
-
-The demo automatically logs in with:
-- **Email**: sarah.johnson@techcorp.com
-- **Role**: Employee
-- **Department**: Engineering
-
-## File Structure
-
-```
-demo/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/
-│   │   ├── Common/
-│   │   │   ├── LoadingSpinner.tsx
-│   │   │   └── NotificationSystem.tsx
-│   │   └── Layout/
-│   │       ├── Header.tsx
-│   │       └── Sidebar.tsx
-│   ├── pages/
-│   │   ├── Auth/
-│   │   ├── Dashboard/
-│   │   ├── Wellness/
-│   │   ├── Resources/
-│   │   ├── Analytics/
-│   │   ├── Profile/
-│   │   ├── Settings/
-│   │   └── Compliance/
-│   ├── store/
-│   │   ├── slices/
-│   │   └── index.ts
-│   ├── App.tsx
-│   ├── index.tsx
-│   └── index.css
-├── mock-data/
-│   └── index.ts
-├── package.json
-└── README.md
-```
-
-## Customization
-
-### Adding More Mock Data
-
-Edit `mock-data/index.ts` to add:
-- Additional users
-- More wellness entries
-- New resources
-- Extended analytics data
-
-### Modifying the UI
-
-The demo uses Material-UI components and can be customized by:
-- Updating theme colors in `src/index.tsx`
-- Modifying component styles
-- Adding new pages and routes
-
-### Changing Pre-loaded Search
-
-To change the pre-loaded search term, modify:
-1. `mock-data/index.ts` - Update the `preloadedSearch.query`
-2. `src/pages/Resources/Resources.tsx` - Update the initial `searchTerm` state
+Use the sidebar to navigate between different sections:
+- **Dashboard**: Main overview and quick actions
+- **Wellness Check-in**: Complete wellness assessment
+- **AI Chat**: Conversation with AI wellness companion
+- **Resources**: Library of wellness content
+- **Analytics**: Organizational health insights
 
 ## Technical Details
 
-- **Framework**: React 18 with TypeScript
-- **UI Library**: Material-UI (MUI)
+- **Frontend**: React with TypeScript
 - **State Management**: Redux Toolkit
-- **Routing**: React Router v6
-- **Mock Data**: TypeScript interfaces with realistic data
+- **UI Framework**: Material-UI
+- **Routing**: React Router
+- **Mock Data**: Realistic data structures simulating real application
 
-## Browser Support
+## Demo Data
 
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port 3000 in use**: The demo will automatically try port 3001
-2. **Dependencies not found**: Run `npm install` again
-3. **TypeScript errors**: Ensure all dependencies are properly installed
-
-### Performance
-
-The demo is optimized for performance with:
-- Lazy loading of components
-- Efficient state management
-- Optimized mock data structures
+The demo includes realistic mock data for:
+- User profiles and authentication
+- Wellness check-in entries
+- AI conversations
+- Wellness resources
+- Analytics and organizational health metrics
+- Risk assessments
 
 ## Next Steps
 
-This demo showcases the UI and user experience. For the full application:
+This demo showcases the core functionality. In a full implementation, you would have:
+- Real backend API integration
+- Database persistence
+- AI model integration
+- User authentication and authorization
+- Advanced analytics and reporting
+- Team management features
+- Compliance and privacy controls
 
-1. Connect to a real backend API
-2. Implement actual authentication
-3. Add real database integration
-4. Deploy to production environment
+---
 
-## Support
-
-For questions about the demo or the full application, please refer to the main project documentation.
+**Note**: This is a demonstration application. All data is mock data and no real user information is collected or stored.

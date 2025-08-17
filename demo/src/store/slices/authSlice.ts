@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { mockUsers } from '../../mock-data';
+import { mockUsers } from '../../mock-data/index';
 
 export interface User {
   id: string;
