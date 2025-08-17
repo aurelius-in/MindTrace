@@ -31,6 +31,20 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Switch,
+  FormControlLabel,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Badge,
+  Tooltip,
+  IconButton,
+  Divider,
+  Avatar,
+  Stack,
+  Rating,
+  Slider,
+  Autocomplete,
 } from '@mui/material';
 import {
   Warning,
@@ -49,9 +63,31 @@ import {
   Notifications,
   Visibility,
   Edit,
+  ExpandMore,
+  FilterList,
+  Refresh,
+  Download,
+  Share,
+  Settings,
+  Add,
+  Remove,
+  Star,
+  StarBorder,
+  TrendingFlat,
+  Speed,
+  Timer,
+  EmojiEvents,
+  PsychologyAlt,
+  HealthAndSafety,
+  Work,
+  School,
+  FamilyRestroom,
+  SportsEsports,
+  Restaurant,
+  Hotel,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 import { RootState } from '../../store';
 import { addNotification } from '../../store/slices/uiSlice';
@@ -82,6 +118,14 @@ const RiskAssessment: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [showInterventionDialog, setShowInterventionDialog] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<any>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [selectedTimeframe, setSelectedTimeframe] = useState('3months');
+  const [riskThreshold, setRiskThreshold] = useState(70);
+  const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [comparisonMode, setComparisonMode] = useState(false);
 
   // Risk assessment data
   const [riskData, setRiskData] = useState({
@@ -210,12 +254,12 @@ const RiskAssessment: React.FC = () => {
     }
   };
 
-  // Chart data
+  // Enhanced chart data
   const riskTrendData = [
-    { month: 'Oct', stress: 45, burnout: 30, engagement: 75, satisfaction: 70 },
-    { month: 'Nov', stress: 55, burnout: 35, engagement: 70, satisfaction: 68 },
-    { month: 'Dec', stress: 65, burnout: 40, engagement: 65, satisfaction: 65 },
-    { month: 'Jan', stress: 75, burnout: 45, engagement: 60, satisfaction: 62 },
+    { month: 'Oct', stress: 45, burnout: 30, engagement: 75, satisfaction: 70, productivity: 82, absenteeism: 3 },
+    { month: 'Nov', stress: 55, burnout: 35, engagement: 70, satisfaction: 68, productivity: 78, absenteeism: 5 },
+    { month: 'Dec', stress: 65, burnout: 40, engagement: 65, satisfaction: 65, productivity: 72, absenteeism: 7 },
+    { month: 'Jan', stress: 75, burnout: 45, engagement: 60, satisfaction: 62, productivity: 68, absenteeism: 9 },
   ];
 
   const riskDistributionData = [
@@ -224,11 +268,157 @@ const RiskAssessment: React.FC = () => {
     { name: 'High Risk', value: 20, color: '#f44336' },
   ];
 
+  const departmentComparisonData = [
+    { department: 'Engineering', stress: 72, burnout: 38, engagement: 58, satisfaction: 61 },
+    { department: 'Sales', stress: 68, burnout: 42, engagement: 62, satisfaction: 59 },
+    { department: 'Marketing', stress: 65, burnout: 35, engagement: 68, satisfaction: 65 },
+    { department: 'HR', stress: 58, burnout: 28, engagement: 75, satisfaction: 72 },
+    { department: 'Finance', stress: 62, burnout: 32, engagement: 70, satisfaction: 68 },
+  ];
+
+  const wellnessFactorsData = [
+    { factor: 'Physical Health', score: 75, impact: 'High' },
+    { factor: 'Mental Health', score: 65, impact: 'High' },
+    { factor: 'Social Support', score: 80, impact: 'Medium' },
+    { factor: 'Work Environment', score: 70, impact: 'High' },
+    { factor: 'Financial Security', score: 85, impact: 'Medium' },
+    { factor: 'Career Growth', score: 60, impact: 'High' },
+  ];
+
+  const interventionEffectivenessData = [
+    { intervention: 'Stress Management', effectiveness: 85, participants: 45, cost: 2500 },
+    { intervention: 'Flexible Hours', effectiveness: 78, participants: 120, cost: 1500 },
+    { intervention: 'Mental Health Support', effectiveness: 92, participants: 28, cost: 5000 },
+    { intervention: 'Team Building', effectiveness: 72, participants: 85, cost: 3000 },
+    { intervention: 'Wellness Programs', effectiveness: 68, participants: 95, cost: 2000 },
+  ];
+
   return (
     <Box sx={{ p: 3, maxWidth: 1400, mx: 'auto' }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 600, color: 'primary.main' }}>
-        Risk Assessment & Burnout Prevention
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: 'primary.main' }}>
+          Risk Assessment & Burnout Prevention
+        </Typography>
+        
+        <Stack direction="row" spacing={2}>
+          <Tooltip title="Refresh Data">
+            <IconButton onClick={() => dispatch(addNotification({ message: 'Data refreshed', type: 'success' }))}>
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Export Report">
+            <IconButton onClick={() => dispatch(addNotification({ message: 'Report exported', type: 'success' }))}>
+              <Download />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Share Dashboard">
+            <IconButton onClick={() => dispatch(addNotification({ message: 'Dashboard shared', type: 'success' }))}>
+              <Share />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Settings">
+            <IconButton onClick={() => setShowFilters(!showFilters)}>
+              <Settings />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
+
+      {/* Enhanced Control Panel */}
+      <Accordion expanded={showFilters} onChange={() => setShowFilters(!showFilters)} sx={{ mb: 3 }}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+            <FilterList sx={{ mr: 1 }} />
+            Filters & Settings
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Timeframe</InputLabel>
+                <Select
+                  value={selectedTimeframe}
+                  onChange={(e) => setSelectedTimeframe(e.target.value)}
+                  label="Timeframe"
+                >
+                  <MenuItem value="1week">Last Week</MenuItem>
+                  <MenuItem value="1month">Last Month</MenuItem>
+                  <MenuItem value="3months">Last 3 Months</MenuItem>
+                  <MenuItem value="6months">Last 6 Months</MenuItem>
+                  <MenuItem value="1year">Last Year</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Departments</InputLabel>
+                <Select
+                  multiple
+                  value={selectedDepartments}
+                  onChange={(e) => setSelectedDepartments(e.target.value as string[])}
+                  label="Departments"
+                >
+                  <MenuItem value="engineering">Engineering</MenuItem>
+                  <MenuItem value="sales">Sales</MenuItem>
+                  <MenuItem value="marketing">Marketing</MenuItem>
+                  <MenuItem value="hr">HR</MenuItem>
+                  <MenuItem value="finance">Finance</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <Typography variant="body2" gutterBottom>
+                Risk Threshold: {riskThreshold}%
+              </Typography>
+              <Slider
+                value={riskThreshold}
+                onChange={(e, value) => setRiskThreshold(value as number)}
+                min={0}
+                max={100}
+                valueLabelDisplay="auto"
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <Stack spacing={2}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={autoRefresh}
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                    />
+                  }
+                  label="Auto Refresh"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showAdvancedMetrics}
+                      onChange={(e) => setShowAdvancedMetrics(e.target.checked)}
+                    />
+                  }
+                  label="Advanced Metrics"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={comparisonMode}
+                      onChange={(e) => setComparisonMode(e.target.checked)}
+                    />
+                  }
+                  label="Comparison Mode"
+                />
+              </Stack>
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
 
       {/* Risk Overview */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -324,6 +514,8 @@ const RiskAssessment: React.FC = () => {
           <Tab label="Interventions" />
           <Tab label="Trends" />
           <Tab label="Recommendations" />
+          <Tab label="Advanced Analytics" />
+          <Tab label="Department Comparison" />
         </Tabs>
       </Box>
 
@@ -619,6 +811,211 @@ const RiskAssessment: React.FC = () => {
                     />
                   </ListItem>
                 </List>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* Advanced Analytics Tab */}
+      <TabPanel value={tabValue} index={4}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Wellness Factors Radar Chart
+                </Typography>
+                
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={wellnessFactorsData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="factor" />
+                    <PolarRadiusAxis domain={[0, 100]} />
+                    <Radar
+                      name="Wellness Score"
+                      dataKey="score"
+                      stroke="#8884d8"
+                      fill="#8884d8"
+                      fillOpacity={0.6}
+                    />
+                    <RechartsTooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Intervention Effectiveness
+                </Typography>
+                
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={interventionEffectivenessData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="intervention" angle={-45} textAnchor="end" height={80} />
+                    <YAxis domain={[0, 100]} />
+                    <RechartsTooltip />
+                    <Bar dataKey="effectiveness" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Productivity vs Wellness Correlation
+                </Typography>
+                
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={riskTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis yAxisId="left" domain={[0, 100]} />
+                    <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
+                    <RechartsTooltip />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="productivity"
+                      stroke="#4caf50"
+                      fill="#4caf50"
+                      fillOpacity={0.3}
+                      name="Productivity"
+                    />
+                    <Area
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="stress"
+                      stroke="#f44336"
+                      fill="#f44336"
+                      fillOpacity={0.3}
+                      name="Stress Level"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* Department Comparison Tab */}
+      <TabPanel value={tabValue} index={5}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Department Wellness Comparison
+                </Typography>
+                
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Department</TableCell>
+                        <TableCell>Stress Level</TableCell>
+                        <TableCell>Burnout Risk</TableCell>
+                        <TableCell>Engagement</TableCell>
+                        <TableCell>Satisfaction</TableCell>
+                        <TableCell>Overall Score</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {departmentComparisonData.map((dept) => {
+                        const overallScore = Math.round((dept.stress + dept.burnout + dept.engagement + dept.satisfaction) / 4);
+                        return (
+                          <TableRow key={dept.department}>
+                            <TableCell>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                {dept.department}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box sx={{ width: '100%', mr: 1 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={dept.stress}
+                                    color={dept.stress > 70 ? 'error' : dept.stress > 50 ? 'warning' : 'success'}
+                                    sx={{ height: 8, borderRadius: 4 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2">{dept.stress}%</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box sx={{ width: '100%', mr: 1 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={dept.burnout}
+                                    color={dept.burnout > 40 ? 'error' : dept.burnout > 25 ? 'warning' : 'success'}
+                                    sx={{ height: 8, borderRadius: 4 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2">{dept.burnout}%</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box sx={{ width: '100%', mr: 1 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={dept.engagement}
+                                    color={dept.engagement > 70 ? 'success' : dept.engagement > 50 ? 'warning' : 'error'}
+                                    sx={{ height: 8, borderRadius: 4 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2">{dept.engagement}%</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box sx={{ width: '100%', mr: 1 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={dept.satisfaction}
+                                    color={dept.satisfaction > 70 ? 'success' : dept.satisfaction > 50 ? 'warning' : 'error'}
+                                    sx={{ height: 8, borderRadius: 4 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2">{dept.satisfaction}%</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={`${overallScore}/100`}
+                                color={overallScore > 70 ? 'success' : overallScore > 50 ? 'warning' : 'error'}
+                                sx={{ fontWeight: 600 }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  setSelectedRisk({ ...dept, type: 'department' });
+                                  setShowInterventionDialog(true);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </CardContent>
             </Card>
           </Grid>
