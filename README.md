@@ -1,6 +1,12 @@
-# git
+# Enterprise Employee Wellness AI
 
 A comprehensive enterprise-grade AI platform for employee wellness, organizational health monitoring, and workforce resilience. Built with agentic AI architecture, privacy-first design, and seamless enterprise integrations.
+
+## 🎬 Demo
+
+![Enterprise Wellness AI Demo](assets/demo.gif)
+
+*Experience the intuitive UI/UX of our wellness platform - from personalized dashboards to AI-powered conversations and comprehensive analytics.*
 
 ## 🎯 Core Value Proposition
 

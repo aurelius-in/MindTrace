@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { mockWellnessEntries, mockConversations } from '../../mock-data';
+import { mockWellnessEntries, mockConversations } from '../../mock-data/index';
 
 export interface WellnessEntry {
   id: string;

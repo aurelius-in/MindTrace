@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { mockAnalytics } from '../../mock-data';
+import { mockAnalytics } from '../../mock-data/index';
 
 export interface AnalyticsState {
   organizationalHealth: {
