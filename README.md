@@ -1,4 +1,4 @@
-# Enterprise Employee Wellness AI
+# Enterprise Employee Wellness AI (MindTrace)
 
 A comprehensive enterprise-grade AI platform for employee wellness, organizational health monitoring, and workforce resilience. Built with agentic AI architecture, privacy-first design, and seamless enterprise integrations.
 
