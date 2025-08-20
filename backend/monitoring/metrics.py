@@ -414,11 +414,15 @@ class HealthChecker:
         
         # Check external services
         try:
-            # TODO: Add checks for external services (OpenAI, ChromaDB, etc.)
+            external_services = self._check_external_services()
             health_status["components"]["external_services"] = {
-                "status": "healthy",
-                "services": {}
+                "status": "healthy" if all(external_services.values()) else "degraded",
+                "services": external_services
             }
+            
+            if not all(external_services.values()):
+                health_status["status"] = "degraded"
+                
         except Exception as e:
             health_status["components"]["external_services"] = {
                 "status": "unhealthy",
@@ -427,6 +431,138 @@ class HealthChecker:
             health_status["status"] = "unhealthy"
         
         return health_status
+    
+    def _check_external_services(self) -> Dict[str, bool]:
+        """Check external service health"""
+        try:
+            service_status = {}
+            
+            # Check OpenAI API
+            service_status["openai"] = self._check_openai_service()
+            
+            # Check ChromaDB
+            service_status["chromadb"] = self._check_chromadb_service()
+            
+            # Check Redis
+            service_status["redis"] = self._check_redis_service()
+            
+            # Check PostgreSQL
+            service_status["postgresql"] = self._check_postgresql_service()
+            
+            # Check Slack API (if configured)
+            if hasattr(settings.integrations, 'slack_bot_token') and settings.integrations.slack_bot_token:
+                service_status["slack"] = self._check_slack_service()
+            
+            # Check Teams API (if configured)
+            if hasattr(settings.integrations, 'teams_app_id') and settings.integrations.teams_app_id:
+                service_status["teams"] = self._check_teams_service()
+            
+            return service_status
+            
+        except Exception as e:
+            self.logger.error(f"Error checking external services: {e}")
+            return {
+                "openai": False,
+                "chromadb": False,
+                "redis": False,
+                "postgresql": False
+            }
+    
+    def _check_openai_service(self) -> bool:
+        """Check OpenAI API connectivity"""
+        try:
+            import openai
+            from config.settings import settings
+            
+            # Test with a simple API call
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": "Hello"}],
+                max_tokens=5,
+                api_key=settings.ai.openai_api_key
+            )
+            
+            return response is not None
+            
+        except Exception as e:
+            self.logger.error(f"OpenAI service check failed: {e}")
+            return False
+    
+    def _check_chromadb_service(self) -> bool:
+        """Check ChromaDB connectivity"""
+        try:
+            import chromadb
+            
+            # Test connection to ChromaDB
+            client = chromadb.PersistentClient(path="./data/chromadb")
+            collections = client.list_collections()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"ChromaDB service check failed: {e}")
+            return False
+    
+    def _check_redis_service(self) -> bool:
+        """Check Redis connectivity"""
+        try:
+            import redis
+            from config.settings import settings
+            
+            # Test Redis connection
+            r = redis.from_url(settings.database.redis_url)
+            r.ping()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Redis service check failed: {e}")
+            return False
+    
+    def _check_postgresql_service(self) -> bool:
+        """Check PostgreSQL connectivity"""
+        try:
+            from database.connection import check_db_connection
+            
+            return check_db_connection()
+            
+        except Exception as e:
+            self.logger.error(f"PostgreSQL service check failed: {e}")
+            return False
+    
+    def _check_slack_service(self) -> bool:
+        """Check Slack API connectivity"""
+        try:
+            from slack_sdk import WebClient
+            from config.settings import settings
+            
+            # Test Slack API connection
+            client = WebClient(token=settings.integrations.slack_bot_token)
+            response = client.auth_test()
+            
+            return response["ok"] if response else False
+            
+        except Exception as e:
+            self.logger.error(f"Slack service check failed: {e}")
+            return False
+    
+    def _check_teams_service(self) -> bool:
+        """Check Teams API connectivity"""
+        try:
+            from microsoft_graph_python import GraphServiceClient
+            from config.settings import settings
+            
+            # Test Teams API connection
+            client = GraphServiceClient(credentials=settings.integrations.teams_client_credentials)
+            
+            # Try to get user info as a test
+            user = client.me.get()
+            
+            return user is not None
+            
+        except Exception as e:
+            self.logger.error(f"Teams service check failed: {e}")
+            return False
     
     async def check_agent_health(self) -> Dict[str, Any]:
         """Check agent system health."""

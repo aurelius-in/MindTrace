@@ -132,12 +132,51 @@ class SentimentRiskDetectionAgent(BaseAgent):
     
     def _load_risk_models(self):
         """Load machine learning models for risk detection"""
-        # TODO: Load pre-trained models for specific risk detection
-        # This could include:
-        # - Burnout prediction models
-        # - Stress pattern recognition
-        # - Toxic behavior detection
-        pass
+        try:
+            from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+            import torch
+            
+            # Load models for different risk types
+            self.risk_models = {}
+            
+            # Burnout detection model
+            try:
+                self.risk_models["burnout"] = pipeline(
+                    "text-classification",
+                    model="microsoft/DialoGPT-medium",  # Placeholder - replace with actual burnout model
+                    tokenizer="microsoft/DialoGPT-medium"
+                )
+            except Exception as e:
+                self.logger.warning(f"Could not load burnout model: {e}")
+                self.risk_models["burnout"] = None
+            
+            # Stress detection model
+            try:
+                self.risk_models["stress"] = pipeline(
+                    "text-classification",
+                    model="distilbert-base-uncased",  # Placeholder - replace with actual stress model
+                    tokenizer="distilbert-base-uncased"
+                )
+            except Exception as e:
+                self.logger.warning(f"Could not load stress model: {e}")
+                self.risk_models["stress"] = None
+            
+            # Crisis detection model
+            try:
+                self.risk_models["crisis"] = pipeline(
+                    "text-classification",
+                    model="bert-base-uncased",  # Placeholder - replace with actual crisis model
+                    tokenizer="bert-base-uncased"
+                )
+            except Exception as e:
+                self.logger.warning(f"Could not load crisis model: {e}")
+                self.risk_models["crisis"] = None
+            
+            self.logger.info(f"Loaded {len([m for m in self.risk_models.values() if m is not None])} risk detection models")
+            
+        except Exception as e:
+            self.logger.error(f"Error loading risk detection models: {e}")
+            self.risk_models = {}
     
     async def process_request(self, context: AgentContext, data: Dict[str, Any]) -> AgentResponse:
         """Process text for sentiment analysis and risk detection"""
