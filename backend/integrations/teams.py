@@ -529,8 +529,8 @@ Would you like me to help you connect with any of these resources?
             # Log the incident
             logger.warning(f"High-risk situation detected for user {user_id}: {message} (risk: {risk_level})")
             
-            # TODO: Implement escalation to HR or management
-            # await self._escalate_to_hr(user_id, message, risk_level)
+            # Escalate to HR or management
+            await self._escalate_to_hr(user_id, message, risk_level)
             
         except Exception as e:
             logger.error(f"Error handling high-risk situation: {e}")
@@ -615,9 +615,83 @@ Would you like me to help you connect with any of these resources?
     
     async def _escalate_to_hr(self, user_id: str, message: str, risk_level: float):
         """Escalate high-risk situation to HR."""
-        # TODO: Implement HR escalation
-        logger.warning(f"HR escalation needed for user {user_id} with risk level {risk_level}")
-        pass
+        try:
+            # Get user information
+            user_info = await self._get_user_info(user_id)
+            
+            # Create escalation record
+            escalation_data = {
+                "user_id": user_id,
+                "user_name": user_info.get("display_name", "Unknown"),
+                "user_email": user_info.get("email", ""),
+                "message": message,
+                "risk_level": risk_level,
+                "timestamp": datetime.now().isoformat(),
+                "status": "pending",
+                "escalation_type": "high_risk_situation"
+            }
+            
+            # Store escalation in database
+            from database.repository import analytics_repo
+            await analytics_repo.create_escalation_record(escalation_data)
+            
+            # Send notification to HR channel
+            hr_channel = getattr(settings.integrations, 'teams_hr_channel_id', None)
+            if hr_channel:
+                hr_message = f"""
+🚨 High-Risk Situation Escalation
+
+User: {user_info.get("display_name", "Unknown")} ({user_id})
+Risk Level: {risk_level:.2f}
+Message: {message[:200]}{"..." if len(message) > 200 else ""}
+Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Please review and take appropriate action.
+                """
+                
+                await self._send_message(hr_channel, hr_message)
+            
+            # Send email notification to HR team
+            await self._send_hr_email_notification(escalation_data)
+            
+            logger.warning(f"HR escalation completed for user {user_id} with risk level {risk_level}")
+            
+        except Exception as e:
+            logger.error(f"Error escalating to HR: {e}")
+    
+    async def _send_hr_email_notification(self, escalation_data: Dict[str, Any]):
+        """Send email notification to HR team"""
+        try:
+            from utils.email import send_email
+            
+            subject = f"High-Risk Wellness Situation - {escalation_data['user_name']}"
+            
+            body = f"""
+High-Risk Wellness Situation Detected
+
+User: {escalation_data['user_name']} ({escalation_data['user_email']})
+Risk Level: {escalation_data['risk_level']:.2f}
+Time: {escalation_data['timestamp']}
+
+Message: {escalation_data['message']}
+
+Please review and take appropriate action immediately.
+
+This is an automated notification from the Enterprise Wellness AI system.
+            """
+            
+            # Send to HR team
+            hr_emails = getattr(settings.integrations, 'hr_team_emails', [])
+            if hr_emails:
+                await send_email(
+                    to_emails=hr_emails,
+                    subject=subject,
+                    body=body,
+                    priority="high"
+                )
+                
+        except Exception as e:
+            logger.error(f"Error sending HR email notification: {e}")
     
     async def send_proactive_message(self, user_id: str, message: str):
         """Send a proactive message to a user."""

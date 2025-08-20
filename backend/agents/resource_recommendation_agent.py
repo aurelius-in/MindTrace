@@ -326,10 +326,39 @@ class ResourceRecommendationAgent(BaseAgent):
         user_role: str
     ) -> List[Dict[str, Any]]:
         """Collaborative recommendation based on similar users"""
-        # TODO: Implement collaborative filtering
-        # This would require user interaction data and similarity calculations
-        
-        # For now, return role-based recommendations
+        try:
+            # Get user ID from context (assuming it's available)
+            user_id = getattr(self, 'current_user_id', None)
+            
+            if not user_id:
+                # Fallback to role-based recommendations
+                return await self._role_based_recommendation(user_role)
+            
+            # Implement collaborative filtering
+            collaborative_recs = self._implement_collaborative_filtering(user_id, "wellness")
+            
+            if not collaborative_recs:
+                return await self._role_based_recommendation(user_role)
+            
+            # Convert to resource objects and format
+            recommendations = []
+            for rec in collaborative_recs:
+                resource = self._get_resource_by_id(rec['resource_id'])
+                if resource:
+                    recommendations.append({
+                        "resource": resource,
+                        "similarity_score": rec['score'] / 10.0,  # Normalize to 0-1
+                        "reason": f"Recommended by {rec['user_count']} similar users (avg rating: {rec['avg_rating']:.1f})"
+                    })
+            
+            return recommendations[:5]
+            
+        except Exception as e:
+            self.logger.error(f"Collaborative recommendation failed: {e}")
+            return await self._role_based_recommendation(user_role)
+    
+    async def _role_based_recommendation(self, user_role: str) -> List[Dict[str, Any]]:
+        """Fallback role-based recommendation"""
         role_based_resources = [
             resource for resource in self.resources
             if user_role in (resource.target_audience or []) or "all_employees" in (resource.target_audience or [])
@@ -343,6 +372,186 @@ class ResourceRecommendationAgent(BaseAgent):
             }
             for resource in role_based_resources[:5]
         ]
+    
+    def _implement_collaborative_filtering(self, user_id: str, resource_type: str) -> List[Dict[str, Any]]:
+        """Implement collaborative filtering for resource recommendations"""
+        try:
+            from database.repository import analytics_repo, user_repo
+            
+            # Get user's interaction history
+            user_interactions = analytics_repo.get_user_resource_interactions(user_id)
+            
+            if not user_interactions:
+                return []
+            
+            # Find similar users based on interaction patterns
+            similar_users = self._find_similar_users(user_id, user_interactions)
+            
+            if not similar_users:
+                return []
+            
+            # Get resources that similar users found helpful
+            recommended_resources = self._get_resources_from_similar_users(similar_users, resource_type)
+            
+            # Filter and rank recommendations
+            filtered_recommendations = self._filter_and_rank_recommendations(
+                recommended_resources, user_interactions
+            )
+            
+            return filtered_recommendations[:10]  # Return top 10 recommendations
+            
+        except Exception as e:
+            self.logger.error(f"Error implementing collaborative filtering: {e}")
+            return []
+    
+    def _find_similar_users(self, user_id: str, user_interactions: List[Dict]) -> List[str]:
+        """Find users with similar interaction patterns"""
+        try:
+            from database.repository import analytics_repo
+            
+            # Get all user interactions for comparison
+            all_user_interactions = analytics_repo.get_all_user_resource_interactions()
+            
+            if not all_user_interactions:
+                return []
+            
+            # Calculate similarity scores
+            user_similarities = []
+            
+            for other_user_id, other_interactions in all_user_interactions.items():
+                if other_user_id == user_id:
+                    continue
+                
+                similarity_score = self._calculate_user_similarity(
+                    user_interactions, other_interactions
+                )
+                
+                if similarity_score > 0.3:  # Minimum similarity threshold
+                    user_similarities.append((other_user_id, similarity_score))
+            
+            # Sort by similarity and return top similar users
+            user_similarities.sort(key=lambda x: x[1], reverse=True)
+            similar_users = [user_id for user_id, score in user_similarities[:5]]
+            
+            return similar_users
+            
+        except Exception as e:
+            self.logger.error(f"Error finding similar users: {e}")
+            return []
+    
+    def _calculate_user_similarity(self, user1_interactions: List[Dict], user2_interactions: List[Dict]) -> float:
+        """Calculate similarity between two users based on interaction patterns"""
+        try:
+            # Extract resource IDs and ratings
+            user1_resources = {interaction['resource_id']: interaction.get('rating', 5.0) 
+                             for interaction in user1_interactions}
+            user2_resources = {interaction['resource_id']: interaction.get('rating', 5.0) 
+                             for interaction in user2_interactions}
+            
+            # Find common resources
+            common_resources = set(user1_resources.keys()) & set(user2_resources.keys())
+            
+            if not common_resources:
+                return 0.0
+            
+            # Calculate cosine similarity
+            user1_ratings = [user1_resources[resource] for resource in common_resources]
+            user2_ratings = [user2_resources[resource] for resource in common_resources]
+            
+            dot_product = sum(a * b for a, b in zip(user1_ratings, user2_ratings))
+            norm1 = sum(a * a for a in user1_ratings) ** 0.5
+            norm2 = sum(b * b for b in user2_ratings) ** 0.5
+            
+            if norm1 == 0 or norm2 == 0:
+                return 0.0
+            
+            similarity = dot_product / (norm1 * norm2)
+            return max(0, similarity)  # Ensure non-negative
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating user similarity: {e}")
+            return 0.0
+    
+    def _get_resources_from_similar_users(self, similar_users: List[str], resource_type: str) -> List[Dict[str, Any]]:
+        """Get resources that similar users found helpful"""
+        try:
+            from database.repository import analytics_repo
+            
+            recommended_resources = []
+            
+            for user_id in similar_users:
+                # Get user's highly rated resources
+                user_interactions = analytics_repo.get_user_resource_interactions(user_id)
+                
+                for interaction in user_interactions:
+                    if (interaction.get('rating', 0) >= 7.0 and  # High rating threshold
+                        interaction.get('resource_type') == resource_type):
+                        
+                        resource_info = {
+                            'resource_id': interaction['resource_id'],
+                            'rating': interaction['rating'],
+                            'user_id': user_id,
+                            'interaction_type': interaction.get('interaction_type', 'view')
+                        }
+                        recommended_resources.append(resource_info)
+            
+            return recommended_resources
+            
+        except Exception as e:
+            self.logger.error(f"Error getting resources from similar users: {e}")
+            return []
+    
+    def _filter_and_rank_recommendations(self, recommendations: List[Dict], user_interactions: List[Dict]) -> List[Dict]:
+        """Filter and rank collaborative filtering recommendations"""
+        try:
+            # Remove resources the user has already interacted with
+            user_resource_ids = {interaction['resource_id'] for interaction in user_interactions}
+            filtered_recommendations = [
+                rec for rec in recommendations 
+                if rec['resource_id'] not in user_resource_ids
+            ]
+            
+            # Group by resource and calculate average rating
+            resource_scores = {}
+            for rec in filtered_recommendations:
+                resource_id = rec['resource_id']
+                if resource_id not in resource_scores:
+                    resource_scores[resource_id] = {
+                        'ratings': [],
+                        'users': set(),
+                        'interaction_types': set()
+                    }
+                
+                resource_scores[resource_id]['ratings'].append(rec['rating'])
+                resource_scores[resource_id]['users'].add(rec['user_id'])
+                resource_scores[resource_id]['interaction_types'].add(rec['interaction_type'])
+            
+            # Calculate final scores
+            final_recommendations = []
+            for resource_id, scores in resource_scores.items():
+                avg_rating = np.mean(scores['ratings'])
+                user_count = len(scores['users'])
+                interaction_diversity = len(scores['interaction_types'])
+                
+                # Weighted score: average rating + popularity bonus + diversity bonus
+                final_score = avg_rating + (user_count * 0.1) + (interaction_diversity * 0.2)
+                
+                final_recommendations.append({
+                    'resource_id': resource_id,
+                    'score': final_score,
+                    'avg_rating': avg_rating,
+                    'user_count': user_count,
+                    'interaction_diversity': interaction_diversity
+                })
+            
+            # Sort by final score
+            final_recommendations.sort(key=lambda x: x['score'], reverse=True)
+            
+            return final_recommendations
+            
+        except Exception as e:
+            self.logger.error(f"Error filtering and ranking recommendations: {e}")
+            return []
     
     async def _hybrid_recommendation(
         self, 

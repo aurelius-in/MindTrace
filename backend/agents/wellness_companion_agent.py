@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import json
 import logging
+import numpy as np
 
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
@@ -260,13 +261,51 @@ You don't have to go through this alone. There are people ready to help you righ
     
     def _analyze_mood_trend(self, current_mood: int) -> str:
         """Analyze mood trend based on current and historical data"""
-        # TODO: Implement mood trend analysis with historical data
-        if current_mood >= 7:
-            return "positive"
-        elif current_mood >= 4:
-            return "neutral"
-        else:
-            return "negative"
+        try:
+            # Get historical mood data for the user
+            from database.repository import wellness_entry_repo
+            
+            # Get last 30 days of mood data
+            historical_entries = wellness_entry_repo.get_user_entries_by_timeframe(
+                user_id=self.current_user_id,
+                days=30
+            )
+            
+            if not historical_entries:
+                # No historical data, use current mood only
+                if current_mood >= 7:
+                    return "positive"
+                elif current_mood >= 4:
+                    return "neutral"
+                else:
+                    return "negative"
+            
+            # Extract mood scores
+            mood_scores = [entry.get('wellness_score', 7.0) for entry in historical_entries]
+            
+            # Calculate trend
+            if len(mood_scores) >= 2:
+                recent_avg = np.mean(mood_scores[-7:])  # Last 7 entries
+                earlier_avg = np.mean(mood_scores[:-7]) if len(mood_scores) > 7 else np.mean(mood_scores)
+                
+                if recent_avg > earlier_avg * 1.1:  # 10% improvement
+                    return "improving"
+                elif recent_avg < earlier_avg * 0.9:  # 10% decline
+                    return "declining"
+                else:
+                    return "stable"
+            else:
+                return "stable"
+                
+        except Exception as e:
+            self.logger.error(f"Error analyzing mood trend: {e}")
+            # Fallback to current mood analysis
+            if current_mood >= 7:
+                return "positive"
+            elif current_mood >= 4:
+                return "neutral"
+            else:
+                return "negative"
     
     def _get_mood_based_suggestions(self, mood_score: int, activities: List[str]) -> List[str]:
         """Get suggestions based on mood and activities"""
@@ -288,15 +327,287 @@ You don't have to go through this alone. There are people ready to help you righ
         return suggestions
     
     def get_wellness_insights(self, user_id: str) -> Dict[str, Any]:
-        """Get wellness insights for a user"""
-        # TODO: Implement wellness insights based on conversation history
-        return {
-            "mood_trend": "stable",
-            "stress_patterns": [],
-            "wellness_score": 7.5,
-            "recommendations": [
+        """Get wellness insights for a user based on conversation history and data"""
+        try:
+            from database.repository import wellness_entry_repo, analytics_repo
+            
+            # Get user's wellness data
+            wellness_entries = wellness_entry_repo.get_user_entries_by_timeframe(user_id, 30)
+            conversation_history = self.get_memory()
+            
+            if not wellness_entries and not conversation_history:
+                return {
+                    "mood_trend": "stable",
+                    "stress_patterns": [],
+                    "wellness_score": 7.5,
+                    "recommendations": [
+                        "Continue regular check-ins",
+                        "Consider stress management techniques",
+                        "Maintain work-life balance"
+                    ]
+                }
+            
+            # Analyze mood trends
+            mood_trend = self._analyze_mood_trends(user_id)
+            
+            # Analyze stress patterns
+            stress_patterns = self._analyze_stress_patterns(wellness_entries)
+            
+            # Calculate overall wellness score
+            wellness_score = self._calculate_wellness_score(wellness_entries, conversation_history)
+            
+            # Generate personalized recommendations
+            recommendations = self._generate_wellness_recommendations(
+                mood_trend, stress_patterns, wellness_score, conversation_history
+            )
+            
+            return {
+                "mood_trend": mood_trend.get("trend", "stable"),
+                "stress_patterns": stress_patterns,
+                "wellness_score": wellness_score,
+                "recommendations": recommendations,
+                "data_points": len(wellness_entries),
+                "conversation_count": len(conversation_history)
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error getting wellness insights: {e}")
+            return {
+                "mood_trend": "stable",
+                "stress_patterns": [],
+                "wellness_score": 7.5,
+                "recommendations": [
+                    "Continue regular check-ins",
+                    "Consider stress management techniques",
+                    "Maintain work-life balance"
+                ]
+            }
+    
+    def _analyze_mood_trends(self, user_id: str) -> Dict[str, Any]:
+        """Analyze user's mood trends over time"""
+        try:
+            from database.repository import wellness_entry_repo
+            
+            # Get last 30 days of mood data
+            historical_entries = wellness_entry_repo.get_user_entries_by_timeframe(
+                user_id=user_id,
+                days=30
+            )
+            
+            if not historical_entries:
+                return {
+                    "trend": "stable",
+                    "average_mood": 7.0,
+                    "mood_volatility": 0.5,
+                    "recommendations": ["Continue current wellness practices"]
+                }
+            
+            # Extract mood scores
+            mood_scores = [entry.get('wellness_score', 7.0) for entry in historical_entries]
+            
+            # Calculate trend
+            if len(mood_scores) >= 2:
+                recent_avg = np.mean(mood_scores[-7:])  # Last 7 entries
+                earlier_avg = np.mean(mood_scores[:-7]) if len(mood_scores) > 7 else np.mean(mood_scores)
+                
+                if recent_avg > earlier_avg * 1.1:  # 10% improvement
+                    trend = "improving"
+                elif recent_avg < earlier_avg * 0.9:  # 10% decline
+                    trend = "declining"
+                else:
+                    trend = "stable"
+            else:
+                trend = "stable"
+            
+            # Calculate volatility (standard deviation)
+            mood_volatility = np.std(mood_scores) if len(mood_scores) > 1 else 0.5
+            
+            # Generate recommendations based on analysis
+            recommendations = self._generate_mood_recommendations(trend, mood_volatility, np.mean(mood_scores))
+            
+            return {
+                "trend": trend,
+                "average_mood": np.mean(mood_scores),
+                "mood_volatility": mood_volatility,
+                "data_points": len(mood_scores),
+                "recommendations": recommendations
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error analyzing mood trends: {e}")
+            return {
+                "trend": "stable",
+                "average_mood": 7.0,
+                "mood_volatility": 0.5,
+                "recommendations": ["Continue current wellness practices"]
+            }
+    
+    def _analyze_stress_patterns(self, wellness_entries: List[Dict]) -> List[str]:
+        """Analyze stress patterns from wellness entries"""
+        try:
+            if not wellness_entries:
+                return []
+            
+            stress_patterns = []
+            stress_scores = [entry.get('stress_level', 5.0) for entry in wellness_entries]
+            
+            # Analyze stress patterns
+            avg_stress = np.mean(stress_scores)
+            stress_volatility = np.std(stress_scores) if len(stress_scores) > 1 else 0
+            
+            if avg_stress > 7.0:
+                stress_patterns.append("Consistently high stress levels")
+            elif avg_stress < 3.0:
+                stress_patterns.append("Generally low stress levels")
+            
+            if stress_volatility > 2.0:
+                stress_patterns.append("High stress variability")
+            
+            # Check for time-based patterns
+            weekday_stress = []
+            weekend_stress = []
+            
+            for entry in wellness_entries:
+                timestamp = entry.get('timestamp')
+                if timestamp:
+                    if isinstance(timestamp, str):
+                        timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    
+                    if timestamp.weekday() < 5:  # Weekday
+                        weekday_stress.append(entry.get('stress_level', 5.0))
+                    else:  # Weekend
+                        weekend_stress.append(entry.get('stress_level', 5.0))
+            
+            if weekday_stress and weekend_stress:
+                weekday_avg = np.mean(weekday_stress)
+                weekend_avg = np.mean(weekend_stress)
+                
+                if weekday_avg > weekend_avg * 1.5:
+                    stress_patterns.append("Higher stress during workdays")
+                elif weekend_avg > weekday_avg * 1.5:
+                    stress_patterns.append("Higher stress during weekends")
+            
+            return stress_patterns
+            
+        except Exception as e:
+            self.logger.error(f"Error analyzing stress patterns: {e}")
+            return []
+    
+    def _calculate_wellness_score(self, wellness_entries: List[Dict], conversation_history: List) -> float:
+        """Calculate overall wellness score"""
+        try:
+            if not wellness_entries and not conversation_history:
+                return 7.5
+            
+            # Calculate score from wellness entries
+            entry_score = 0
+            if wellness_entries:
+                wellness_scores = [entry.get('wellness_score', 7.0) for entry in wellness_entries]
+                entry_score = np.mean(wellness_scores)
+            
+            # Calculate score from conversation sentiment
+            conversation_score = 0
+            if conversation_history:
+                sentiment_scores = []
+                for message in conversation_history:
+                    if hasattr(message, 'content'):
+                        sentiment = self.sentiment_analyzer.polarity_scores(message.content)
+                        sentiment_scores.append(sentiment['compound'])
+                
+                if sentiment_scores:
+                    avg_sentiment = np.mean(sentiment_scores)
+                    conversation_score = (avg_sentiment + 1) * 5  # Convert from [-1,1] to [0,10]
+            
+            # Weighted average
+            if entry_score > 0 and conversation_score > 0:
+                return (entry_score * 0.7) + (conversation_score * 0.3)
+            elif entry_score > 0:
+                return entry_score
+            elif conversation_score > 0:
+                return conversation_score
+            else:
+                return 7.5
+                
+        except Exception as e:
+            self.logger.error(f"Error calculating wellness score: {e}")
+            return 7.5
+    
+    def _generate_wellness_recommendations(self, mood_trend: Dict, stress_patterns: List[str], 
+                                         wellness_score: float, conversation_history: List) -> List[str]:
+        """Generate personalized wellness recommendations"""
+        recommendations = []
+        
+        # Mood-based recommendations
+        if mood_trend.get("trend") == "declining":
+            recommendations.append("Consider scheduling a wellness check-in with HR or a counselor")
+        
+        # Stress-based recommendations
+        if "Consistently high stress levels" in stress_patterns:
+            recommendations.append("Implement regular stress management techniques like meditation or exercise")
+        
+        if "Higher stress during workdays" in stress_patterns:
+            recommendations.append("Consider workload management and setting boundaries")
+        
+        # Wellness score-based recommendations
+        if wellness_score < 6.0:
+            recommendations.append("Focus on self-care and consider reaching out for support")
+        elif wellness_score > 8.5:
+            recommendations.append("Great wellness! Consider mentoring others or sharing positive practices")
+        
+        # Conversation-based recommendations
+        if len(conversation_history) < 5:
+            recommendations.append("Increase regular check-ins to better track your wellness")
+        
+        # Default recommendations
+        if not recommendations:
+            recommendations.extend([
                 "Continue regular check-ins",
                 "Consider stress management techniques",
                 "Maintain work-life balance"
-            ]
-        }
+            ])
+        
+        return recommendations[:5]  # Limit to 5 recommendations
+    
+    def _generate_mood_recommendations(self, trend: str, volatility: float, avg_mood: float) -> List[str]:
+        """Generate personalized recommendations based on mood analysis"""
+        recommendations = []
+        
+        # Trend-based recommendations
+        if trend == "declining":
+            recommendations.extend([
+                "Consider scheduling a check-in with your manager or HR",
+                "Try incorporating more stress-reduction activities into your routine",
+                "Consider reaching out to the Employee Assistance Program"
+            ])
+        elif trend == "improving":
+            recommendations.extend([
+                "Great progress! Continue with your current wellness practices",
+                "Consider sharing your positive strategies with colleagues"
+            ])
+        
+        # Volatility-based recommendations
+        if volatility > 2.0:  # High mood swings
+            recommendations.extend([
+                "Consider establishing a more consistent daily routine",
+                "Practice mindfulness or meditation to stabilize mood",
+                "Track your mood triggers to identify patterns"
+            ])
+        
+        # Average mood-based recommendations
+        if avg_mood < 5.0:
+            recommendations.extend([
+                "Consider speaking with a mental health professional",
+                "Focus on small, achievable wellness goals",
+                "Reach out to trusted colleagues or friends for support"
+            ])
+        elif avg_mood > 8.0:
+            recommendations.extend([
+                "Excellent wellness! Consider mentoring others",
+                "Share your positive energy with the team"
+            ])
+        
+        # Default recommendation if none generated
+        if not recommendations:
+            recommendations.append("Continue current wellness practices")
+        
+        return recommendations[:5]  # Limit to 5 recommendations

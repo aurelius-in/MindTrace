@@ -160,18 +160,75 @@ class BaseAgent(ABC):
     
     async def escalate_to_human(self, context: AgentContext, reason: str):
         """Escalate to human intervention"""
-        self.logger.warning(f"Escalating to human: {reason}", extra={
-            "user_id": context.user_id,
-            "reason": reason,
-            "agent_type": self.agent_type.value
-        })
-        
-        # TODO: Implement human escalation logic
-        # This could involve:
-        # - Creating a ticket in the HR system
-        # - Sending an alert to designated HR personnel
-        # - Logging the escalation for audit purposes
-        pass
+        try:
+            self.logger.warning(f"Escalating to human: {reason}", extra={
+                "user_id": context.user_id,
+                "reason": reason,
+                "agent_type": self.agent_type.value
+            })
+            
+            # Create escalation record
+            escalation_data = {
+                "user_id": context.user_id,
+                "reason": reason,
+                "agent_type": self.agent_type.value,
+                "timestamp": datetime.now().isoformat(),
+                "status": "pending",
+                "escalation_type": "human_intervention",
+                "context_data": {
+                    "session_id": context.session_id,
+                    "user_role": context.user_role,
+                    "conversation_history": len(self.get_memory())
+                }
+            }
+            
+            # Store escalation in database
+            from database.repository import analytics_repo
+            await analytics_repo.create_escalation_record(escalation_data)
+            
+            # Send notification to appropriate channels
+            await self._send_escalation_notifications(escalation_data)
+            
+            # Log for audit purposes
+            self.logger.info(f"Human escalation created for user {context.user_id}: {reason}")
+            
+        except Exception as e:
+            self.logger.error(f"Error escalating to human: {e}")
+    
+    async def _send_escalation_notifications(self, escalation_data: Dict[str, Any]):
+        """Send escalation notifications to appropriate channels"""
+        try:
+            from utils.email import send_email
+            
+            subject = f"Human Intervention Required - {escalation_data['agent_type']}"
+            
+            body = f"""
+Human Intervention Required
+
+User ID: {escalation_data['user_id']}
+Agent Type: {escalation_data['agent_type']}
+Reason: {escalation_data['reason']}
+Time: {escalation_data['timestamp']}
+
+Context: {escalation_data.get('context_data', {})}
+
+Please review and provide human intervention as needed.
+
+This is an automated notification from the Enterprise Wellness AI system.
+            """
+            
+            # Send to designated escalation contacts
+            escalation_emails = getattr(settings, 'escalation_emails', [])
+            if escalation_emails:
+                await send_email(
+                    to_emails=escalation_emails,
+                    subject=subject,
+                    body=body,
+                    priority="high"
+                )
+                
+        except Exception as e:
+            self.logger.error(f"Error sending escalation notifications: {e}")
     
     def __str__(self):
         return f"{self.agent_type.value}_agent"
